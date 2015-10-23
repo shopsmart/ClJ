@@ -12,6 +12,9 @@ import clojure.lang.IFn;
 
 public class ClJ {
 
+    /*
+     * TODO: Switch to Java annotations to specify and use Clojure namespace aliases
+     */
     @SuppressWarnings("unchecked")
     public static <T> T define(Class<T> clojureInterface, String... nsAliases) {
         return (T) Proxy.newProxyInstance(clojureInterface.getClassLoader(),
