@@ -14,8 +14,6 @@ import junit.framework.TestCase;
 
 public class ClJTest extends TestCase {
 
-    private static final String INPUT = "I see because I C";
-
     @Require({"clojure.string :as str",
               "clojure.java.io :as io"})
     interface ClojureCalls {
@@ -23,6 +21,9 @@ public class ClJTest extends TestCase {
         @Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
     }
     private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
+
+
+    private static final String INPUT = "I see because I C";
 
     public void testClJ_replace() throws Exception {
         String result = clojure.replace(INPUT, Pattern.compile("C"), "see");
