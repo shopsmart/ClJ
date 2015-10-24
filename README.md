@@ -47,7 +47,7 @@ Java to Clojre interop DSL and utilities
 
 * One for dynamically calling Clojure using a form similar to "do"
 
-```
+```java
     String result = (String)
         doAll(require("clojure.string :as str",
                       "clojure.java.io :as io"),
