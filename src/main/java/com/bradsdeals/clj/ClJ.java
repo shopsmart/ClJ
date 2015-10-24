@@ -37,11 +37,11 @@ public class ClJ {
      * An annotation for Interfaces allowing a Java programmer to specify a "require"
      * clause with namespace aliases.  e.g.:
      * <code>
-     *   @Require({"clojure.string :as str",
+     *   \@Require({"clojure.string :as str",
      *             "clojure.java.io :as io"})
      *   interface ClojureCalls {
-     *       @ns("str") String replace(String source, Pattern regex, String replacement);
-     *       @ns("io") void copy(byte[] input, OutputStream output) throws IOException;
+     *       \@Ns("str") String replace(String source, Pattern regex, String replacement);
+     *       \@Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
      *   }
      *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
      *
@@ -59,11 +59,11 @@ public class ClJ {
      * specify the alias for the namespace where the Clojure function corresponding to
      * the Java method lives.  e.g.:
      * <code>
-     *   @Require({"clojure.string :as str",
+     *   \@Require({"clojure.string :as str",
      *             "clojure.java.io :as io"})
      *   interface ClojureCalls {
-     *       @ns("str") String replace(String source, Pattern regex, String replacement);
-     *       @ns("io") void copy(byte[] input, OutputStream output) throws IOException;
+     *       \@Ns("str") String replace(String source, Pattern regex, String replacement);
+     *       \@Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
      *   }
      *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
      *
@@ -81,16 +81,20 @@ public class ClJ {
      * delegate to the corresponding Clojure functions as specified by the "Require" and
      * "ns" annotations.
      * <code>
-     *   @Require({"clojure.string :as str",
+     *   \@Require({"clojure.string :as str",
      *             "clojure.java.io :as io"})
      *   interface ClojureCalls {
-     *       @ns("str") String replace(String source, Pattern regex, String replacement);
-     *       @ns("io") void copy(byte[] input, OutputStream output) throws IOException;
+     *       \@Ns("str") String replace(String source, Pattern regex, String replacement);
+     *       \@Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
      *   }
      *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
      *
      *   // Then call methods on the 'clojure' object normally.
      * </code>
+     *
+     * @param clojureInterface The Clojure interface to define.
+     * @param <T> The interface type.
+     * @return T an instance of clojureInterface.
      */
     @SuppressWarnings("unchecked")
     public static <T> T define(Class<T> clojureInterface) {
@@ -105,15 +109,15 @@ public class ClJ {
      * <code>
      * doAll(require("Leiningen.core.user :as l",
      *               "clojure.java.io :as io"),
-     *     _("l/init"),
-     *     _("l/profiles")
-     *     _("io/copy", "/tmp/sourcefile", "/tmp/outputfile"));
+     *     $("l/init"),
+     *     $("l/profiles")
+     *     $("io/copy", "/tmp/sourcefile", "/tmp/outputfile"));
      * </code>
      *
      * @param aliases A string array of Clojure package aliases.  A helper {@link #require(String...)}
      * function can easily provide this array.
      * @param block A varargs parameter containing the function invocations to run.  These are obtained
-     * via the {@link #_(String, Object...)} factory function.  IFn objects may be resolved via the {@link #fn(String)}
+     * via the {@link #$(String, Object...)} factory function.  IFn objects may be resolved via the {@link #fn(String)}
      * function.
      *
      * @return The result of the last function call.
@@ -158,7 +162,7 @@ public class ClJ {
      * @param args The function's arguments.
      * @return A ClojureFnInvocation that can be executed by {@link #doAll(String[], ClojureFn...)}.
      */
-    public static ClojureFnInvocation _(String name, Object...args) {
+    public static ClojureFnInvocation $(String name, Object...args) {
         return new ClojureFnInvocation(name,args);
     }
 
@@ -170,9 +174,9 @@ public class ClJ {
      * @param args The arguments to pass.
      * @return the value the Clojure function returned.
      */
-    public static Object $(String fn, Object...args) {
+    public static Object invoke(String fn, Object...args) {
         IFn invokable = Clojure.var(fn);
-        return $(invokable, args);
+        return invoke(invokable, args);
     }
 
     /**
@@ -182,7 +186,7 @@ public class ClJ {
      * @param args The arguments to pass.
      * @return the value the Clojure function returned.
      */
-    public static Object $(IFn fn, Object...args) {
+    public static Object invoke(IFn fn, Object...args) {
         switch (args.length) {
         case 0:
             return fn.invoke();
@@ -306,7 +310,7 @@ public class ClJ {
             if (fn == null) {
                 throw new IllegalArgumentException("Could not find function: " + name);
             }
-            return $(fn, resolvedArgs);
+            return ClJ.invoke(fn, resolvedArgs);
         }
 
     }
@@ -360,7 +364,7 @@ public class ClJ {
                 }
                 fnCache.put(method.getName(), fn);
             }
-            return $(fn, args);
+            return ClJ.invoke(fn, args);
         }
     }
 

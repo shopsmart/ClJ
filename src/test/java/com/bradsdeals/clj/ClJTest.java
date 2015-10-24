@@ -40,7 +40,7 @@ public class ClJTest extends TestCase {
     public void testDoReplace() throws Exception {
         String result = (String)
                 doAll(require("clojure.string :as str"),
-                        _("str/replace", INPUT, Pattern.compile("C"), "see"));
+                        $("str/replace", INPUT, Pattern.compile("C"), "see"));
         assertEquals("I see because I see", result);
     }
 
@@ -51,8 +51,8 @@ public class ClJTest extends TestCase {
         String result = (String)
             doAll(require("clojure.string :as str",
                           "clojure.java.io :as io"),
-                    _("io/copy", input, output),
-                    _("str/replace", INPUT, Pattern.compile("C"), "see"));
+                    $("io/copy", input, output),
+                    $("str/replace", INPUT, Pattern.compile("C"), "see"));
 
         assertEquals(INPUT, output.toString());
         assertEquals("I see because I see", result);
