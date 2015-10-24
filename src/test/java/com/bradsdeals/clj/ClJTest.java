@@ -5,7 +5,7 @@ import java.io.OutputStream;
 import java.util.regex.Pattern;
 
 import com.bradsdeals.clj.ClJ.Require;
-import com.bradsdeals.clj.ClJ.ns;
+import com.bradsdeals.clj.ClJ.Ns;
 import com.bradsdeals.clj.io.StringBufferOutputStream;
 
 import static com.bradsdeals.clj.ClJ.*;
@@ -19,8 +19,8 @@ public class ClJTest extends TestCase {
     @Require({"clojure.string :as str",
               "clojure.java.io :as io"})
     interface ClojureCalls {
-        @ns("str") String replace(String source, Pattern regex, String replacement);
-        @ns("io") void copy(byte[] input, OutputStream output) throws IOException;
+        @Ns("str") String replace(String source, Pattern regex, String replacement);
+        @Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
     }
     private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
 

@@ -72,7 +72,7 @@ public class ClJ {
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public @interface ns {
+    public @interface Ns {
         public String value() default "";
     }
 
@@ -337,7 +337,7 @@ public class ClJ {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             IFn fn = fnCache.get(method.getName());
             if (fn == null) {
-                ns alias = method.getAnnotation(ns.class);
+                Ns alias = method.getAnnotation(Ns.class);
                 if (alias == null) {
                     try {
                         fn = Clojure.var(method.getName());
