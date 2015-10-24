@@ -56,3 +56,11 @@ Java to Clojre interop DSL and utilities
 ```
 
 Complete Javadoc is provided.
+
+# License
+
+Licensed under the Eclipse Public License version 1.0.
+
+# Authors
+
+David Orme
