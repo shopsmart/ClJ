@@ -12,7 +12,7 @@ Java to Clojre interop DSL and utilities
 
 * Depend on in your Maven projects using:
 
-```
+```xml
     <dependency>
       <groupId>com.bradsdeals</groupId>
       <artifactId>ClJ</artifactId>
@@ -24,10 +24,10 @@ Java to Clojre interop DSL and utilities
 
 * One based on defining a Java interface to Clojure's functions
 
-```
-    @Require({"Lieningen.core.user :as u",
-              "Lieningen.core.project :as p",
-              "Lieningen.core.classpath :as cp"})
+```java
+    @Require({"Leiningen.core.user :as u",
+              "Leiningen.core.project :as p",
+              "Leiningen.core.classpath :as cp"})
     private interface Leiningen {
         @Ns("u") void init();
         @Ns("u") void profiles();
