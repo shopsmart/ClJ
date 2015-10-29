@@ -8,8 +8,6 @@ import com.bradsdeals.clj.ClJ.Require;
 import com.bradsdeals.clj.ClJ.Ns;
 import com.bradsdeals.clj.io.StringBufferOutputStream;
 
-import clojure.lang.ISeq;
-
 import static com.bradsdeals.clj.ClJ.*;
 
 import junit.framework.TestCase;
