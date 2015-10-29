@@ -67,10 +67,10 @@ public class ClJTest extends TestCase {
         String result = (String)
             doAll(require("clojure.string :as str",
                           "clojure.java.io :as io",
-                          "clojure.core :as c"),
+                          "clojure.core :as core"),
                     let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")),
                             $("io/copy", input, output),
-                            $("c/str", "see", " because ", "see")));
+                            $("core/str", "see", " because ", "see")));
 
         assertEquals(INPUT, output.toString());
         assertEquals("I see because I see because I see because I see", result);
