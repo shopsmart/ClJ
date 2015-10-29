@@ -122,16 +122,18 @@ public class ClJ {
      * @param block A varargs parameter containing the function invocations to run.  These are obtained
      * via the {@link #$(String, Object...)} factory function.  IFn objects may be resolved via the {@link #fn(String)}
      * function.
+     * @param <T> The result type.
      *
      * @return The result of the last function call.
      */
-    public static Object doAll(String[] aliases, ClojureFn...block) {
+    @SuppressWarnings("unchecked")
+    public static <T> T doAll(String[] aliases, ClojureFn...block) {
         Map<String, String> nsAliases = computeNsAliases(aliases);
         Object result = null;
         for (ClojureFn fn : block) {
             result = fn.invoke(nsAliases, new LinkedList<HashMap<String,Object>>());
         }
-        return result;
+        return (T)result;
     }
 
     /**

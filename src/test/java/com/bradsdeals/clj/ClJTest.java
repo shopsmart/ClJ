@@ -38,7 +38,7 @@ public class ClJTest extends TestCase {
     }
 
     public void testDoReplace() throws Exception {
-        String result = (String)
+        String result =
                 doAll(require("clojure.string :as str"),
                         $("str/replace", INPUT, Pattern.compile("C"), "see"));
         assertEquals("I see because I see", result);
@@ -48,7 +48,7 @@ public class ClJTest extends TestCase {
         byte[] input = INPUT.getBytes();
         final StringBufferOutputStream output = new StringBufferOutputStream();
 
-        String result = (String)
+        String result =
             doAll(require("clojure.string :as str",
                           "clojure.java.io :as io"),
                     $("io/copy", input, output),
@@ -62,7 +62,7 @@ public class ClJTest extends TestCase {
         byte[] input = INPUT.getBytes();
         final StringBufferOutputStream output = new StringBufferOutputStream();
 
-        String result = (String)
+        String result =
             doAll(require("clojure.string :as str",
                           "clojure.java.io :as io",
                           "clojure.core :as core"),
@@ -78,7 +78,7 @@ public class ClJTest extends TestCase {
         byte[] input = INPUT.getBytes();
         final StringBufferOutputStream output = new StringBufferOutputStream();
 
-        String result = (String)
+        String result =
             doAll(require("clojure.string :as str",
                           "clojure.java.io :as io",
                           "clojure.core :as core"),
