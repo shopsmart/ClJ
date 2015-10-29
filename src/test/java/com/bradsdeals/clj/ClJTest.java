@@ -75,4 +75,22 @@ public class ClJTest extends TestCase {
         assertEquals(INPUT, output.toString());
         assertEquals("I see because I see because I see because I see", result);
     }
+
+    public void testDoWithSubLetAndShadowing() throws Exception {
+        byte[] input = INPUT.getBytes();
+        final StringBufferOutputStream output = new StringBufferOutputStream();
+
+        String result = (String)
+            doAll(require("clojure.string :as str",
+                          "clojure.java.io :as io",
+                          "clojure.core :as core"),
+                    let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")),
+                            $("io/copy", input, output),
+                            $("core/str", "see", " because ", "see"),
+                            let(vars("see", "I C"),
+                                    $("core/str", "see", " because ", "see"))));
+
+        assertEquals(INPUT, output.toString());
+        assertEquals("I C because I C", result);
+    }
 }

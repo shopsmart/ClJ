@@ -163,7 +163,7 @@ public class ClJ {
         }
         ArrayList<ClojureVar> result = new ArrayList<ClojureVar>(nvPairs.length/2);
         for (int i=0; i <= nvPairs.length-2; i += 2) {
-            result.add(new ClojureVar((String)nvPairs[i], (ClojureFn)nvPairs[i+1]));
+            result.add(new ClojureVar((String)nvPairs[i], nvPairs[i+1]));
         }
         return result.toArray(new ClojureVar[nvPairs.length/2]);
     }
@@ -336,9 +336,9 @@ public class ClJ {
 
     private static class ClojureVar {
         public final String name;
-        public final ClojureFn value;
+        public final Object value;
 
-        public ClojureVar(String name, ClojureFn value) {
+        public ClojureVar(String name, Object value) {
             this.name = name;
             this.value = value;
         }
@@ -375,7 +375,12 @@ public class ClJ {
                 if (result.containsKey(clojureVar.name)) {
                     throw new IllegalStateException("Cannot modify an existing var: " + clojureVar.name);
                 }
-                Object invocationResult = clojureVar.value.invoke(nsAliases, vars);
+                Object invocationResult = null;
+                if (clojureVar.value instanceof ClojureFn) {
+                    invocationResult = ((ClojureFn)clojureVar.value).invoke(nsAliases, vars);
+                } else {
+                    invocationResult = clojureVar.value;
+                }
                 result.put(clojureVar.name, invocationResult);
             }
             return result;
