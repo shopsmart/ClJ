@@ -134,10 +134,29 @@ public class ClJ {
         return result;
     }
 
+    /**
+     * Let expression.  Vars are lexically scoped to the let expression's block.  Let expressions
+     * can be nested, in which case inner let expressions can redeclare the same variable names and
+     * shadow outer variables.  Whenever a let expression is in scope, all strings are first resolved
+     * against declared variable names and values substituted.  Just like in Clojure, variables can
+     * contain any value, including IFns.
+     *
+     * @param vars An array of ClojarVar objects, normally created using the {@link #vars(Object...)} function.
+     * @param block 0-n Clojure expressions to execute with vars in scope.
+     * @return The result of evaluating the last expression in block or null if block is empty.
+     */
     public static ClojureLet let(ClojureVar[] vars, ClojureFn...block) {
         return new ClojureLet(vars, block);
     }
 
+    /**
+     * Declare an array of ClojureVar objects to be used as the initial parameter to a let expression.
+     * There must be an even number of arguments, alternating between String and Clojure expression
+     * objects.
+     *
+     * @param nvPairs The variables to declare as a sequence of names and values.
+     * @return an array of ClojureVar objects suitable for a let expression.
+     */
     public static ClojureVar[] vars(Object...nvPairs) {
         if (nvPairs.length % 2 != 0) {
             throw new IllegalArgumentException("There must be an even number of values in a let binding");
@@ -150,7 +169,7 @@ public class ClJ {
     }
 
     /**
-     * A convenience factory method that returns its parameter list as a String[].  Intended to use to generate
+     * A convenience factory method that returns its parameter list as a String[].  Intended to be used to generate
      * the String[] of namespace aliases used by {@link #doAll(String[], ClojureFn...)}.
      *
      * @param aliases The aliases to return.
