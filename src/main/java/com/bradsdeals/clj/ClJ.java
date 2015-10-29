@@ -9,6 +9,9 @@ import java.lang.annotation.Target;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import clojure.java.api.Clojure;
@@ -126,9 +129,24 @@ public class ClJ {
         Map<String, String> nsAliases = computeNsAliases(aliases);
         Object result = null;
         for (ClojureFn fn : block) {
-            result = fn.invoke(nsAliases);
+            result = fn.invoke(nsAliases, new LinkedList<HashMap<String,Object>>());
         }
         return result;
+    }
+
+    public static ClojureLet let(ClojureVar[] vars, ClojureFn...block) {
+        return new ClojureLet(vars, block);
+    }
+
+    public static ClojureVar[] vars(Object...nvPairs) {
+        if (nvPairs.length % 2 != 0) {
+            throw new IllegalArgumentException("There must be an even number of values in a let binding");
+        }
+        ArrayList<ClojureVar> result = new ArrayList<ClojureVar>(nvPairs.length/2);
+        for (int i=0; i <= nvPairs.length-2; i += 2) {
+            result.add(new ClojureVar((String)nvPairs[i], (ClojureFn)nvPairs[i+1]));
+        }
+        return result.toArray(new ClojureVar[nvPairs.length/2]);
     }
 
     /**
@@ -150,8 +168,8 @@ public class ClJ {
      * @param name The alias-qualified name of the Clojure function to return.  e.g.: "s/replace"
      * @return An unresolved ClojureFn that will be resolved during execution of {@link #doAll(String[], ClojureFn...)}.
      */
-    public static ClojureFn fn(String name) {
-        return new ClojureFn(name);
+    public static ClojureFnLiteral fn(String name) {
+        return new ClojureFnLiteral(name);
     }
 
     /**
@@ -175,8 +193,15 @@ public class ClJ {
      * @return the value the Clojure function returned.
      */
     public static Object invoke(String fn, Object...args) {
-        IFn invokable = Clojure.var(fn);
-        return invoke(invokable, args);
+        Object invokable = Clojure.var(fn);
+        if (invokable instanceof IFn) {
+            return invoke((IFn) invokable, args);
+        } else {
+            if (args.length > 0) {
+                throw new IllegalArgumentException(fn + " is a " + invokable.getClass().getName() + " and cannot be called as a function with arguments.");
+            }
+            return invokable;
+        }
     }
 
     /**
@@ -259,26 +284,109 @@ public class ClJ {
         return result;
     }
 
-    /**
-     * Internal API.  Not for use by clients.
-     */
-    public static class ClojureFn {
-        protected String name;
-        protected IFn fn;
+    public static abstract class ClojureFn {
+        abstract <T> T invoke(Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars);
 
-        public ClojureFn(String name) {
-            this.name = name;
-        }
+        protected Object resolve(String name, String separatorChar, Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars) {
+            Object fn = null;
 
-        public Object invoke(Map<String, String> nsAliases) {
+            fn = findVar(name, vars);
             if (fn != null) {
                 return fn;
             }
-            fn = resolve(name, "/", nsAliases);
+
+            if (name.contains(separatorChar)) {
+                String[] parts = name.split(separatorChar);
+                fn = Clojure.var(nsAliases.get(parts[0]), parts[1]);
+            } else {
+                fn = Clojure.var(name);
+            }
+
+            return fn;
+        }
+
+        protected Object findVar(String name, LinkedList<HashMap<String, Object>> vars) {
+            for (Map<String, Object> varMap : vars) {
+                if (varMap.containsKey(name)) {
+                    return varMap.get(name);
+                }
+            }
+            return null;
+        }
+    }
+
+    private static class ClojureVar {
+        public final String name;
+        public final ClojureFn value;
+
+        public ClojureVar(String name, ClojureFn value) {
+            this.name = name;
+            this.value = value;
+        }
+    }
+
+    public static class ClojureLet extends ClojureFn {
+        private final ClojureVar[] newVars;
+        private final ClojureFn[] block;
+
+        public ClojureLet(ClojureVar[] vars, ClojureFn...block) {
+            this.newVars = vars;
+            this.block = block;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        <T> T invoke(Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars) {
+            Object result = null;
+            try {
+                HashMap<String,Object> resolvedVars = resolveVars(nsAliases, vars, newVars);
+                vars.addFirst(resolvedVars);
+                for (ClojureFn fn : block) {
+                    result = fn.invoke(nsAliases, vars);
+                }
+            } finally {
+                vars.removeFirst();
+            }
+            return (T) result;
+        }
+
+        protected HashMap<String,Object> resolveVars(Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars, ClojureVar[] newVars) {
+            HashMap<String,Object> result = new HashMap<String,Object>();
+            for (ClojureVar clojureVar : newVars) {
+                if (result.containsKey(clojureVar.name)) {
+                    throw new IllegalStateException("Cannot modify an existing var: " + clojureVar.name);
+                }
+                Object invocationResult = clojureVar.value.invoke(nsAliases, vars);
+                result.put(clojureVar.name, invocationResult);
+            }
+            return result;
+        }
+    }
+
+    /**
+     * Internal API.  Not for use by clients.
+     */
+    public static class ClojureFnLiteral extends ClojureFn {
+        protected String name;
+        protected Object fn;
+
+        public ClojureFnLiteral(String name) {
+            this.name = name;
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T invoke(Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars) {
+            if (fn != null) {
+                return (T) fn;
+            }
+            fn = resolve(name, "/", nsAliases, vars);
             if (fn == null) {
                 throw new IllegalArgumentException("Could not find function: " + name);
             }
-            return fn;
+            if (! (fn instanceof IFn)) {
+                throw new IllegalStateException("Expected Clojure function but found: " + fn.getClass().getName() + " : " + fn.toString());
+            }
+            return (T)fn;
         }
     }
 
@@ -286,7 +394,7 @@ public class ClJ {
      * Internal implementation detail only.  Use the #_ factory function to create
      * a function invocation and #doAll to run them.
      */
-    public static class ClojureFnInvocation extends ClojureFn {
+    public static class ClojureFnInvocation extends ClojureFnLiteral {
         private Object[] args;
 
         public ClojureFnInvocation(String name, Object... args) {
@@ -294,40 +402,38 @@ public class ClJ {
             this.args = args;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public Object invoke(Map<String,String> nsAliases) {
+        public <T> T invoke(Map<String,String> nsAliases, LinkedList<HashMap<String, Object>> vars) {
             Object[] resolvedArgs = new Object[args.length];
             for (int i = 0; i < args.length; i++) {
                 Object arg = args[i];
-                if (arg instanceof ClojureFnInvocation) {
-                    resolvedArgs[i] = ((ClojureFnInvocation)arg).invoke(nsAliases);
+                if (arg instanceof ClojureFn) {
+                    resolvedArgs[i] = ((ClojureFn)arg).invoke(nsAliases, vars);
+                } else if (arg instanceof String) {
+                    resolvedArgs[i] = findVar((String) arg, vars);
+                    if (resolvedArgs[i] == null) {
+                        resolvedArgs[i] = arg;
+                    }
                 } else {
                     resolvedArgs[i] = arg;
                 }
             }
 
-            IFn fn = resolve(name, "/", nsAliases);
+            Object fn = resolve(name, "/", nsAliases, vars);
             if (fn == null) {
                 throw new IllegalArgumentException("Could not find function: " + name);
             }
-            return ClJ.invoke(fn, resolvedArgs);
+            if (fn instanceof IFn) {
+                return (T) ClJ.invoke((IFn)fn, resolvedArgs);
+            } else {
+                return (T)fn;
+            }
         }
-
-    }
-
-    private static IFn resolve(String name, String separatorChar, Map<String, String> nsAliases) {
-        IFn fn = null;
-        if (name.contains(separatorChar)) {
-            String[] parts = name.split(separatorChar);
-            fn = Clojure.var(nsAliases.get(parts[0]), parts[1]);
-        } else {
-            fn = Clojure.var(name);
-        }
-        return fn;
     }
 
     /**
-     * Privae implementation detail.  Not for use by clients.
+     * Private implementation detail.  Not for use by clients.
      */
     public static class ClojureModule implements InvocationHandler {
         private Map<String, String> nsAliases;

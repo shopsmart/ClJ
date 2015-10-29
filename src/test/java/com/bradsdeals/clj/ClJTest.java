@@ -8,6 +8,8 @@ import com.bradsdeals.clj.ClJ.Require;
 import com.bradsdeals.clj.ClJ.Ns;
 import com.bradsdeals.clj.io.StringBufferOutputStream;
 
+import clojure.lang.ISeq;
+
 import static com.bradsdeals.clj.ClJ.*;
 
 import junit.framework.TestCase;
@@ -56,5 +58,21 @@ public class ClJTest extends TestCase {
 
         assertEquals(INPUT, output.toString());
         assertEquals("I see because I see", result);
+    }
+
+    public void testDoWithLet() throws Exception {
+        byte[] input = INPUT.getBytes();
+        final StringBufferOutputStream output = new StringBufferOutputStream();
+
+        String result = (String)
+            doAll(require("clojure.string :as str",
+                          "clojure.java.io :as io",
+                          "clojure.core :as c"),
+                    let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")),
+                            $("io/copy", input, output),
+                            $("c/str", "see", " because ", "see")));
+
+        assertEquals(INPUT, output.toString());
+        assertEquals("I see because I see because I see because I see", result);
     }
 }
