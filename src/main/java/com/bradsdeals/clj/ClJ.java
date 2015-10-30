@@ -91,10 +91,19 @@ public class ClJ {
     }
 
     /**
-     * Specify the types Clojure accepts in a given method parameter.  The ClJ runtime
+     * Specify the parameter types Clojure accepts in a given method argument.  The ClJ runtime
      * will type-check parameters against the specified parameter types; in the future,
      * annotation processors and/or IDE tooling will be able to check method calls
-     * against these types at compile time.  E.g.:
+     * against these types at compile time.
+     * <br/>
+     * This annotation is not required to use ClJ.  If preferred, one can use Java method
+     * overloading to achieve a similar effect and gain type safety without resorting to
+     * annotations.  But some Clojure methods have so many permutations of possible
+     * parameter types that adding overloaded methods for each permutation of possible
+     * argument types would itself become unwieldy.  That is the use-case this annotation
+     * is intended to address.
+     *
+     * E.g.:
      *
      * <code>
      *   \@Require({"clojure.string :as str",
