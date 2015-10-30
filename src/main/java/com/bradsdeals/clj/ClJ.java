@@ -115,7 +115,7 @@ public class ClJ {
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.PARAMETER)
-    public @interface Ts {
+    public @interface Pt {
         public Class<?>[] value() default {};
     }
 
@@ -545,9 +545,9 @@ public class ClJ {
             for (int argNum = 0; argNum < parameterAnnotations.length; argNum++) {
                 Annotation[] annotations = parameterAnnotations[argNum];
                 for (Annotation annotation : annotations) {
-                    if (annotation instanceof Ts) {
+                    if (annotation instanceof Pt) {
                         boolean found = false;
-                        Ts t = (Ts) annotation;
+                        Pt t = (Pt) annotation;
                         final Class<?>[] valueTypes = t.value();
                         for (Class<?> expectedType : valueTypes) {
                             if (expectedType.isAssignableFrom(args[argNum].getClass())) {

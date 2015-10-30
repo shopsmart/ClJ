@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 import com.bradsdeals.clj.ClJ.Ns;
 import com.bradsdeals.clj.ClJ.Require;
-import com.bradsdeals.clj.ClJ.Ts;
+import com.bradsdeals.clj.ClJ.Pt;
 import com.bradsdeals.clj.io.StringBufferOutputStream;
 
 import junit.framework.TestCase;
@@ -22,12 +22,12 @@ public class ClJTest extends TestCase {
     @Require({ "clojure.string :as str", "clojure.java.io :as io" })
     interface ClojureCalls {
         @Ns("str")
-        String replace(String source, @Ts({ String.class, Character.class, Pattern.class }) Object match,
-                @Ts({ String.class, Character.class }) Object replacement);
+        String replace(String source, @Pt({ String.class, Character.class, Pattern.class }) Object match,
+                @Pt({ String.class, Character.class }) Object replacement);
 
         @Ns("io")
-        void copy(@Ts({ InputStream.class, Reader.class, File.class, byte[].class, String.class }) Object input,
-                @Ts({ OutputStream.class, Writer.class, File.class }) Object output) throws IOException;
+        void copy(@Pt({ InputStream.class, Reader.class, File.class, byte[].class, String.class }) Object input,
+                @Pt({ OutputStream.class, Writer.class, File.class }) Object output) throws IOException;
     }
 
     private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
