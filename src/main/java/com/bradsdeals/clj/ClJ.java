@@ -2,6 +2,7 @@ package com.bradsdeals.clj;
 
 import static com.coconut_palm_software.possible.iterable.CollectionFactory.hashMap;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -43,8 +44,13 @@ public class ClJ {
      *   \@Require({"clojure.string :as str",
      *             "clojure.java.io :as io"})
      *   interface ClojureCalls {
-     *       \@Ns("str") String replace(String source, Pattern regex, String replacement);
-     *       \@Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
+     *       \@Ns("str")
+     *       String replace(String source,
+     *                      \@Ts({String.class, Character.class, Pattern.class}) Object match,
+     *                      \@Ts({String.class, Character.class}) Object replacement);
+     *       \@Ns("io")
+     *       void copy(\@Ts({InputStream.class, Reader.class, File.class, byte[].class, String.class}) Object input,
+     *                 \@Ts({OutputStream.class, Writer.class, File.class}) Object output) throws IOException;
      *   }
      *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
      *
@@ -65,8 +71,13 @@ public class ClJ {
      *   \@Require({"clojure.string :as str",
      *             "clojure.java.io :as io"})
      *   interface ClojureCalls {
-     *       \@Ns("str") String replace(String source, Pattern regex, String replacement);
-     *       \@Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
+     *       \@Ns("str")
+     *       String replace(String source,
+     *                      \@Ts({String.class, Character.class, Pattern.class}) Object match,
+     *                      \@Ts({String.class, Character.class}) Object replacement);
+     *       \@Ns("io")
+     *       void copy(\@Ts({InputStream.class, Reader.class, File.class, byte[].class, String.class}) Object input,
+     *                 \@Ts({OutputStream.class, Writer.class, File.class}) Object output) throws IOException;
      *   }
      *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
      *
@@ -77,6 +88,35 @@ public class ClJ {
     @Target(ElementType.METHOD)
     public @interface Ns {
         public String value() default "";
+    }
+
+    /**
+     * Specify the types Clojure accepts in a given method parameter.  The ClJ runtime
+     * will type-check parameters against the specified parameter types; in the future,
+     * annotation processors and/or IDE tooling will be able to check method calls
+     * against these types at compile time.  E.g.:
+     *
+     * <code>
+     *   \@Require({"clojure.string :as str",
+     *             "clojure.java.io :as io"})
+     *   interface ClojureCalls {
+     *       \@Ns("str")
+     *       String replace(String source,
+     *                      \@Ts({String.class, Character.class, Pattern.class}) Object match,
+     *                      \@Ts({String.class, Character.class}) Object replacement);
+     *       \@Ns("io")
+     *       void copy(\@Ts({InputStream.class, Reader.class, File.class, byte[].class, String.class}) Object input,
+     *                 \@Ts({OutputStream.class, Writer.class, File.class}) Object output) throws IOException;
+     *   }
+     *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
+     *
+     *   // Then call methods on the 'clojure' object normally.
+     * </code>
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.PARAMETER)
+    public @interface Ts {
+        public Class<?>[] value() default {};
     }
 
     /**
@@ -496,7 +536,38 @@ public class ClJ {
                 }
                 fnCache.put(method.getName(), fn);
             }
+            validateArgTypes(method, args);
             return ClJ.invoke(fn, args);
+        }
+
+        private void validateArgTypes(Method method, Object[] args) {
+            final Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+            for (int argNum = 0; argNum < parameterAnnotations.length; argNum++) {
+                Annotation[] annotations = parameterAnnotations[argNum];
+                for (Annotation annotation : annotations) {
+                    if (annotation instanceof Ts) {
+                        boolean found = false;
+                        Ts t = (Ts) annotation;
+                        final Class<?>[] valueTypes = t.value();
+                        for (Class<?> expectedType : valueTypes) {
+                            if (expectedType.isAssignableFrom(args[argNum].getClass())) {
+                                found=true;
+                            }
+                        }
+                        if (!found) {
+                            throw new IllegalArgumentException("Clojure function " + method.getName() + ", argument " + argNum + " (0-based) is type " + args[argNum].getClass().getName() + "; expected one of: " + getValueTypeNames(valueTypes));
+                        }
+                    }
+                }
+            }
+        }
+
+        private String getValueTypeNames(Class<?>[] valueTypes) {
+            StringBuffer result = new StringBuffer(valueTypes[0].getName());
+            for (int i = 1; i < valueTypes.length; i++) {
+                result.append(", " + valueTypes[i].getName());
+            }
+            return result.toString();
         }
     }
 
