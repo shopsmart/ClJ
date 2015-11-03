@@ -87,10 +87,15 @@ public class ClJTest extends TestCase {
         byte[] input = INPUT.getBytes();
         final StringBufferOutputStream output = new StringBufferOutputStream();
 
-        String result = doAll(require("clojure.string :as str", "clojure.java.io :as io", "clojure.core :as core"),
-                let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")), $("io/copy", input, output),
-                        $("core/str", "see", " because ", "see"),
-                        let(vars("see", "I C"), $("core/str", "see", " because ", "see"))));
+        String result =
+                doAll(require("clojure.string :as str",
+                        "clojure.java.io :as io",
+                        "clojure.core :as core"),
+                    let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")),
+                            $("io/copy", input, output),
+                            $("core/str", "see", " because ", "see"),
+                            let(vars("see", "I C"),
+                                    $("core/str", "see", " because ", "see"))));
 
         assertEquals(INPUT, output.toString());
         assertEquals("I C because I C", result);
