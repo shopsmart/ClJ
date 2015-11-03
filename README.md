@@ -50,7 +50,7 @@ Java to Clojre interop DSL and utilities
 
 ```java
 
-    String result = (String)
+    String result =
         doAll(require("clojure.string :as str",
                       "clojure.java.io :as io"),
                 $("io/copy", input, output),
