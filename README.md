@@ -46,7 +46,9 @@ Java to Clojre interop DSL and utilities
     }
 ```
 
-* One for dynamically calling Clojure using a form similar to "do"
+* One for dynamically calling Clojure using a form similar to "do".  With this form, clojure functions
+can be passed easily to Clojure functions.  The DSL also provides a lexically-scoped implementation
+of "let".  See the tests for documentation on what is supported.
 
 ```java
 
