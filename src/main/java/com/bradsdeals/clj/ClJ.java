@@ -46,11 +46,11 @@ public class ClJ {
      *   interface ClojureCalls {
      *       \@Ns("str")
      *       String replace(String source,
-     *                      \@Ts({String.class, Character.class, Pattern.class}) Object match,
-     *                      \@Ts({String.class, Character.class}) Object replacement);
+     *                      \@Pt({String.class, Character.class, Pattern.class}) Object match,
+     *                      \@Pt({String.class, Character.class}) Object replacement);
      *       \@Ns("io")
-     *       void copy(\@Ts({InputStream.class, Reader.class, File.class, byte[].class, String.class}) Object input,
-     *                 \@Ts({OutputStream.class, Writer.class, File.class}) Object output) throws IOException;
+     *       void copy(\@Pt({InputStream.class, Reader.class, File.class, byte[].class, String.class}) Object input,
+     *                 \@Pt({OutputStream.class, Writer.class, File.class}) Object output) throws IOException;
      *   }
      *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
      *
@@ -73,11 +73,11 @@ public class ClJ {
      *   interface ClojureCalls {
      *       \@Ns("str")
      *       String replace(String source,
-     *                      \@Ts({String.class, Character.class, Pattern.class}) Object match,
-     *                      \@Ts({String.class, Character.class}) Object replacement);
+     *                      \@Pt({String.class, Character.class, Pattern.class}) Object match,
+     *                      \@Pt({String.class, Character.class}) Object replacement);
      *       \@Ns("io")
-     *       void copy(\@Ts({InputStream.class, Reader.class, File.class, byte[].class, String.class}) Object input,
-     *                 \@Ts({OutputStream.class, Writer.class, File.class}) Object output) throws IOException;
+     *       void copy(\@Pt({InputStream.class, Reader.class, File.class, byte[].class, String.class}) Object input,
+     *                 \@Pt({OutputStream.class, Writer.class, File.class}) Object output) throws IOException;
      *   }
      *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
      *
@@ -111,11 +111,11 @@ public class ClJ {
      *   interface ClojureCalls {
      *       \@Ns("str")
      *       String replace(String source,
-     *                      \@Ts({String.class, Character.class, Pattern.class}) Object match,
-     *                      \@Ts({String.class, Character.class}) Object replacement);
+     *                      \@Pt({String.class, Character.class, Pattern.class}) Object match,
+     *                      \@Pt({String.class, Character.class}) Object replacement);
      *       \@Ns("io")
-     *       void copy(\@Ts({InputStream.class, Reader.class, File.class, byte[].class, String.class}) Object input,
-     *                 \@Ts({OutputStream.class, Writer.class, File.class}) Object output) throws IOException;
+     *       void copy(\@Pt({InputStream.class, Reader.class, File.class, byte[].class, String.class}) Object input,
+     *                 \@Pt({OutputStream.class, Writer.class, File.class}) Object output) throws IOException;
      *   }
      *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
      *
@@ -131,7 +131,7 @@ public class ClJ {
     /**
      * Define an instance of a Clojure interface.  Calling methods on this instance will
      * delegate to the corresponding Clojure functions as specified by the "Require" and
-     * "ns" annotations.
+     * "Ns" annotations.
      * <code>
      *   \@Require({"clojure.string :as str",
      *             "clojure.java.io :as io"})
@@ -275,7 +275,7 @@ public class ClJ {
     }
 
     /**
-     * Directly execute the Cloure function identified by fn, passing args as arguments.
+     * Directly execute the Clojure function identified by fn, passing args as arguments.
      *
      * @param fn The Clojure function to call.
      * @param args The arguments to pass.
