@@ -172,6 +172,7 @@ public class ClJ {
      *   // Then call methods on the 'clojure' object normally.
      * </code>
      *
+     * @param classloader The classloader to use to instantiate the Interface
      * @param clojureInterface The Clojure interface to define.
      * @param <T> The interface type.
      * @return T an instance of clojureInterface.
