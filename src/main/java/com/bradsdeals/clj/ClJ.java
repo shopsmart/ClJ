@@ -157,6 +157,34 @@ public class ClJ {
     }
 
     /**
+     * Define an instance of a Clojure interface using a specified classloader.  Calling
+     * methods on this instance will delegate to the corresponding Clojure functions as
+     * specified by the "Require" and "Ns" annotations.
+     * <code>
+     *   \@Require({"clojure.string :as str",
+     *             "clojure.java.io :as io"})
+     *   interface ClojureCalls {
+     *       \@Ns("str") String replace(String source, Pattern regex, String replacement);
+     *       \@Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
+     *   }
+     *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
+     *
+     *   // Then call methods on the 'clojure' object normally.
+     * </code>
+     *
+     * @param clojureInterface The Clojure interface to define.
+     * @param <T> The interface type.
+     * @return T an instance of clojureInterface.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T define(ClassLoader classloader, Class<T> clojureInterface) {
+        Require requires = clojureInterface.getAnnotation(Require.class);
+        String[] requirements = requires != null ? requires.value() : new String[] {};
+        return (T) Proxy.newProxyInstance(classloader,
+                new Class[] {clojureInterface}, new ClojureModule(requirements));
+    }
+
+    /**
      * A "do" block for Java that dynamically calls Clojure code.  e.g.:
      * <code>
      * doAll(require("Leiningen.core.user :as l",
