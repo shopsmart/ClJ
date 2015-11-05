@@ -10,9 +10,9 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.regex.Pattern;
 
-import com.bradsdeals.clj.ClJ.Ns;
-import com.bradsdeals.clj.ClJ.Require;
-import com.bradsdeals.clj.ClJ.Pt;
+import com.bradsdeals.clj.ClJAnnotations.Ns;
+import com.bradsdeals.clj.ClJAnnotations.Pt;
+import com.bradsdeals.clj.ClJAnnotations.Require;
 import com.bradsdeals.clj.io.StringBufferOutputStream;
 
 import junit.framework.TestCase;
