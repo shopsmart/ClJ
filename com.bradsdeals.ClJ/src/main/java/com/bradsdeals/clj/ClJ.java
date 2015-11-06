@@ -14,9 +14,16 @@ import java.util.Map;
 import com.bradsdeals.clj.ClJAnnotations.Ns;
 import com.bradsdeals.clj.ClJAnnotations.Pt;
 import com.bradsdeals.clj.ClJAnnotations.Require;
+import com.bradsdeals.clj.wrappers.ClojureMap;
+import com.bradsdeals.clj.wrappers.ClojureSeq;
+import com.bradsdeals.clj.wrappers.ClojureVector;
 
 import clojure.java.api.Clojure;
 import clojure.lang.IFn;
+import clojure.lang.IPersistentMap;
+import clojure.lang.IPersistentVector;
+import clojure.lang.ISeq;
+import clojure.lang.Seqable;
 
 /**
  * Java helpers for calling Clojure code from Java. This class implements both
@@ -200,26 +207,46 @@ public class ClJ {
      * @param args The arguments to pass.
      * @return the value the Clojure function returned.
      */
-    public static Object invoke(String fn, Object...args) {
+    @SuppressWarnings("unchecked")
+    public static <T> T invoke(String fn, Object...args) {
         Object invokable = Clojure.var(fn);
         if (invokable instanceof IFn) {
-            return invoke((IFn) invokable, args);
+            return (T) invoke((IFn) invokable, args);
         } else {
             if (args.length > 0) {
                 throw new IllegalArgumentException(fn + " is a " + invokable.getClass().getName() + " and cannot be called as a function with arguments.");
             }
-            return invokable;
+            return (T) invokable;
         }
     }
 
     /**
      * Directly execute the Clojure function identified by fn, passing args as arguments.
      *
+     * @param <T> The return type
      * @param fn The Clojure function to call.
      * @param args The arguments to pass.
      * @return the value the Clojure function returned.
      */
-    public static Object invoke(IFn fn, Object...args) {
+    @SuppressWarnings("unchecked")
+    public static <T> T invoke(IFn fn, Object...args) {
+        return (T) toJava(invokeInternal(fn, args));
+    }
+
+    private static Object toJava(Object result) {
+        if (result instanceof IPersistentMap) {
+            return new ClojureMap((IPersistentMap) result);
+        } else if (result instanceof IPersistentVector) {
+            return new ClojureVector((IPersistentVector) result);
+        } else if (result instanceof ISeq) {
+            return new ClojureSeq((ISeq) result);
+        } else if (result instanceof Seqable) {
+            return new ClojureSeq(((Seqable)result).seq());
+        }
+        return result;
+    }
+
+    private static Object invokeInternal(IFn fn, Object...args) {
         switch (args.length) {
         case 0:
             return fn.invoke();

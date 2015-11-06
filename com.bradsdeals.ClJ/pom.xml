@@ -47,9 +47,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.coconut-palm-software</groupId>
+      <groupId>com.coconut_palm_software</groupId>
       <artifactId>com.coconut_palm_software.possible</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.0.1-SNAPSHOT</version>
     </dependency>
 
     <dependency>

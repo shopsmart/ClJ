@@ -5,7 +5,7 @@ Bundle-SymbolicName: com.bradsdeals.ClJ
 Bundle-Version: 0.5.3.qualifier
 Bundle-Vendor: BRADSDEALS
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Require-Bundle: com.coconut_palm_software.possible;bundle-version="1.0.0",
+Require-Bundle: com.coconut_palm_software.possible;bundle-version="1.0.1",
  com.bradsdeals.ClJ.api;bundle-version="0.5.3"
 Export-Package: com.bradsdeals.clj,
  com.bradsdeals.clj.io
