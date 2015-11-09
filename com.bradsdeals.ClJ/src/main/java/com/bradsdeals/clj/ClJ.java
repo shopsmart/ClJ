@@ -574,20 +574,22 @@ public class ClJ {
      */
 
     @SuppressWarnings("rawtypes")
-    static void init(ClassLoader privateClassloader) {
-        ClassLoader origLoader = preInvoke();
+    static void init(final ClassLoader privateClassloader) {
         Exception ex = null;
         try {
             Field dvalField = Var.class.getDeclaredField("dvals");
             dvalField.setAccessible(true);
             localThreadData = Possible.value(new LocalThreadData(privateClassloader, (ThreadLocal)dvalField.get(null)));
-            clojure.lang.Compiler.LOADER.bindRoot(privateClassloader);
+            safeCall(new Callable<Object>() {
+                public Object call() throws Exception {
+                    clojure.lang.Compiler.LOADER.bindRoot(privateClassloader);
+                    return null;
+                }
+            });
         } catch (IllegalAccessException e) {
             ex = e;
         } catch (NoSuchFieldException e) {
             ex = e;
-        } finally {
-            postInvoke(origLoader);
         }
 
         if (ex != null) {
