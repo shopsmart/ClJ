@@ -6,10 +6,13 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.bradsdeals.clj.ClJAnnotations.Ns;
 import com.bradsdeals.clj.ClJAnnotations.Pt;
@@ -17,6 +20,7 @@ import com.bradsdeals.clj.ClJAnnotations.Require;
 import com.bradsdeals.clj.wrappers.ClojureMap;
 import com.bradsdeals.clj.wrappers.ClojureSeq;
 import com.bradsdeals.clj.wrappers.ClojureVector;
+import com.coconut_palm_software.possible.Possible;
 
 import clojure.java.api.Clojure;
 import clojure.lang.IFn;
@@ -24,17 +28,26 @@ import clojure.lang.IPersistentMap;
 import clojure.lang.IPersistentVector;
 import clojure.lang.ISeq;
 import clojure.lang.Seqable;
+import clojure.lang.Var;
 
 /**
  * Java helpers for calling Clojure code from Java. This class implements both
- * dynamic and type-safe methods for calling Clojure.
+ * dynamic and type-safe methods for calling Clojure.<p>
+ *
+ * It is also separated into API and implementation packages, where only the
+ * implementation package has a direct Clojure dependency.  This is to enable
+ * ClJ to optionally be used in environments like OSGi where each instance of
+ * Clojure must be isolated inside its own classloader. (Thanks to ShimDandy
+ * for the techniques required to do this.  See: https://github.com/projectodd/shimdandy)<p>
+ *
+ * The following describes the two APIs:<p>
  *
  * The type-safe method involves creating a Java interface whose types match the
  * types of the Clojure function being called. Annotations on the Java interface
  * specify required namespaces and annotations on the interface methods specify
  * the namespace alias required to access the corresponding function.  Once this
  * is complete, you can use the {@link #define(Class)} function to create an instance
- * of the interface referencing the corresponding Clojure functions.
+ * of the interface referencing the corresponding Clojure functions.<p>
  *
  * The dynamic method mimics Clojure's "do" form, but allows specifying require
  * clauses with aliases at the beginning.  See {@link #doAll(String[], ClojureFn...)}
@@ -43,6 +56,48 @@ import clojure.lang.Seqable;
  * @author dorme
  */
 public class ClJ {
+
+    /**
+     * If ClJ is being used inside a private classloader (e.g., inside of an OSGi container), the container needs
+     * to call {@link #init(ClassLoader)}, passing in the private classloader that this instance of Clojure must
+     * use.  In addition, if the system needs to garbage-collect the classloader used by this instance of Clojure,
+     * it must call the {@link #close()} method when it is done.<p>
+     *
+     * Calling this method activates additional checking around each call, avoiding leaks of Clojure's
+     * classloader to other parts of the system.  If ClJ is not being used in this manner, then this method may be
+     * ignored.
+     *
+     * @param privateClassloader The private container classloader.
+     */
+    @SuppressWarnings("rawtypes")
+    public static void init(ClassLoader privateClassloader) {
+        ClassLoader origLoader = preInvoke();
+        Exception ex = null;
+        try {
+            Field dvalField = Var.class.getDeclaredField("dvals");
+            dvalField.setAccessible(true);
+            localThreadData = Possible.value(new LocalThreadData(privateClassloader, (ThreadLocal)dvalField.get(null)));
+            clojure.lang.Compiler.LOADER.bindRoot(privateClassloader);
+        } catch (IllegalAccessException e) {
+            ex = e;
+        } catch (NoSuchFieldException e) {
+            ex = e;
+        } finally {
+            postInvoke(origLoader);
+        }
+
+        if (ex != null) {
+            throw new RuntimeException("Failed to access Var.dvals", ex);
+        }
+    }
+
+    /**
+     * Close the current Clojure session.  Required if multiple Clojure sessions are being
+     * dynamically started/stopped in order to avoid leaking threads.
+     */
+    public void close() {
+        invoke("clojure.core/shutdown-agents");
+    }
 
     /**
      * Define an instance of a Clojure interface.  Calling methods on this instance will
@@ -204,8 +259,11 @@ public class ClJ {
      * @return the value the Clojure function returned.
      */
     @SuppressWarnings("unchecked")
-    public static <T> T invoke(String fn, Object...args) {
-        Object invokable = Clojure.var(fn);
+    public static <T> T invoke(final String fn, Object...args) {
+        Object invokable = safeCall(new Callable<Object>() {
+            public Object call() throws Exception {
+                return Clojure.var(fn);
+            }});
         if (invokable instanceof IFn) {
             return (T) invoke((IFn) invokable, args);
         } else {
@@ -225,21 +283,26 @@ public class ClJ {
      * @return the value the Clojure function returned.
      */
     @SuppressWarnings("unchecked")
-    public static <T> T invoke(IFn fn, Object...args) {
-        return (T) toJava(invokeInternal(fn, args));
+    public static <T> T invoke(final IFn fn, final Object...args) {
+        return toJava(safeCall(new Callable<T>() {
+            public T call() throws Exception {
+                return (T) invokeInternal(fn, args);
+            }
+        }));
     }
 
-    private static Object toJava(Object result) {
+    @SuppressWarnings("unchecked")
+    private static <T> T toJava(Object result) {
         if (result instanceof IPersistentMap) {
-            return new ClojureMap((IPersistentMap) result);
+            return (T) new ClojureMap((IPersistentMap) result);
         } else if (result instanceof IPersistentVector) {
-            return new ClojureVector((IPersistentVector) result);
+            return (T) new ClojureVector((IPersistentVector) result);
         } else if (result instanceof ISeq) {
-            return new ClojureSeq((ISeq) result);
+            return (T) new ClojureSeq((ISeq) result);
         } else if (result instanceof Seqable) {
-            return new ClojureSeq(((Seqable)result).seq());
+            return (T) new ClojureSeq(((Seqable)result).seq());
         }
-        return result;
+        return (T) result;
     }
 
     private static Object invokeInternal(IFn fn, Object...args) {
@@ -541,4 +604,55 @@ public class ClJ {
         }
     }
 
+    private static <T> T safeCall(Callable<T> runInClojure) {
+        if (localThreadData.hasValue()) {
+            ClassLoader origloader = preInvoke();
+            try {
+                return runInClojure.call();
+            } catch (Exception e) {
+                throw new RuntimeException("Exception calling Clojure", e);
+            } finally {
+                postInvoke(origloader);
+            }
+        } else {
+            try {
+                return runInClojure.call();
+            } catch (Exception e) {
+                throw new RuntimeException("Exception calling Clojure", e);
+            }
+        }
+    }
+
+    private static ClassLoader preInvoke() {
+        final ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(localThreadData.get().classloader);
+        localThreadData.get().callDepth.get().getAndIncrement();
+        return originalClassloader;
+    }
+
+    private static void postInvoke(ClassLoader loader) {
+        if (localThreadData.get().callDepth.get().decrementAndGet() == 0) {
+            localThreadData.get().dvals.remove();
+            localThreadData.get().callDepth.remove();
+        }
+        Thread.currentThread().setContextClassLoader(loader);
+    }
+
+    private static class LocalThreadData {
+        public ClassLoader classloader;
+        @SuppressWarnings("rawtypes")
+        public ThreadLocal dvals;
+        public final ThreadLocal<AtomicLong> callDepth = new ThreadLocal<AtomicLong>() {
+          protected AtomicLong initialValue() {
+              return new AtomicLong(0);
+          }
+        };
+        @SuppressWarnings("rawtypes")
+        public LocalThreadData(ClassLoader classloader, ThreadLocal dvals) {
+            this.classloader = classloader;
+            this.dvals = dvals;
+        }
+    }
+
+    private static Possible<LocalThreadData> localThreadData = Possible.emptyValue();
 }
