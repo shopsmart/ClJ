@@ -28,10 +28,10 @@ public class PrivateClJ {
     public PrivateClJ(ClassLoader context) {
         try {
             cljBridgeClass = context.loadClass("com.bradsdeals.clj.ClJ");
-            final Method init = cljBridgeClass.getMethod("init", ClassLoader.class);
+            final Method init = cljBridgeClass.getDeclaredMethod("init", ClassLoader.class);
             init.invoke(null, context);
-            cljDefine = cljBridgeClass.getMethod("define", ClassLoader.class, Class.class);
-            cljClose = cljBridgeClass.getMethod("close");
+            cljDefine = cljBridgeClass.getDeclaredMethod("define", ClassLoader.class, Class.class);
+            cljClose = cljBridgeClass.getDeclaredMethod("close");
         } catch (Exception e) {
             throw new IllegalStateException("Cannot initialize private Clojure instance", e);
         }
