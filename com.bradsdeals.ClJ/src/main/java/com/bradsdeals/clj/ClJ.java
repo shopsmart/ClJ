@@ -64,12 +64,8 @@ public class ClJ {
      * @param <T> The interface type.
      * @return T an instance of clojureInterface.
      */
-    @SuppressWarnings("unchecked")
     public static <T> T define(Class<T> clojureInterface) {
-        Require requires = clojureInterface.getAnnotation(Require.class);
-        String[] requirements = requires != null ? requires.value() : new String[] {};
-        return (T) Proxy.newProxyInstance(clojureInterface.getClassLoader(),
-                new Class[] {clojureInterface}, new ClojureModule(requirements));
+        return define(clojureInterface.getClassLoader(), clojureInterface);
     }
 
     /**
