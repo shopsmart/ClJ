@@ -27,6 +27,7 @@ import clojure.lang.IFn;
 import clojure.lang.IPersistentMap;
 import clojure.lang.IPersistentVector;
 import clojure.lang.ISeq;
+import clojure.lang.RT;
 import clojure.lang.Seqable;
 import clojure.lang.Var;
 
@@ -582,6 +583,8 @@ public class ClJ {
             localThreadData = Possible.value(new LocalThreadData(privateClassloader, (ThreadLocal)dvalField.get(null)));
             safeCall(new Callable<Object>() {
                 public Object call() throws Exception {
+                    RT.var("clojure.core", "require");
+                    RT.var("clojure.core", "resolve");
                     clojure.lang.Compiler.LOADER.bindRoot(privateClassloader);
                     return null;
                 }
