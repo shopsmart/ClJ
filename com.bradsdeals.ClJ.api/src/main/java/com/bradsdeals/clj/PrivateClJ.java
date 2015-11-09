@@ -31,7 +31,7 @@ public class PrivateClJ {
             final Method init = cljBridgeClass.getDeclaredMethod("init", ClassLoader.class);
             init.setAccessible(true);
             init.invoke(null, context);
-            cljDefine = cljBridgeClass.getDeclaredMethod("define", ClassLoader.class, Class.class);
+            cljDefine = cljBridgeClass.getDeclaredMethod("define", Class.class);
             cljDefine.setAccessible(true);
             cljClose = cljBridgeClass.getDeclaredMethod("close");
             cljClose.setAccessible(true);
