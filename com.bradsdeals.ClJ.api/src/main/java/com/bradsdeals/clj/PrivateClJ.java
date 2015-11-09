@@ -29,9 +29,12 @@ public class PrivateClJ {
         try {
             cljBridgeClass = context.loadClass("com.bradsdeals.clj.ClJ");
             final Method init = cljBridgeClass.getDeclaredMethod("init", ClassLoader.class);
+            init.setAccessible(true);
             init.invoke(null, context);
             cljDefine = cljBridgeClass.getDeclaredMethod("define", ClassLoader.class, Class.class);
+            cljDefine.setAccessible(true);
             cljClose = cljBridgeClass.getDeclaredMethod("close");
+            cljClose.setAccessible(true);
         } catch (Exception e) {
             throw new IllegalStateException("Cannot initialize private Clojure instance", e);
         }
