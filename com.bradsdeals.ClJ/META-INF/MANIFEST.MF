@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: com.bradsdeals.ClJ
 Bundle-SymbolicName: com.bradsdeals.ClJ
-Bundle-Version: 0.5.5.qualifier
+Bundle-Version: 0.5.6.qualifier
 Bundle-Vendor: BRADSDEALS
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: com.coconut_palm_software.possible;bundle-version="1.0.1",
- com.bradsdeals.ClJ.api;bundle-version="0.5.4"
+ com.bradsdeals.ClJ.api
 Export-Package: com.bradsdeals.clj,
  com.bradsdeals.clj.io

@@ -57,47 +57,10 @@ import clojure.lang.Var;
  */
 public class ClJ {
 
-    /**
-     * If ClJ is being used inside a private classloader (e.g., inside of an OSGi container), the container needs
-     * to call {@link #init(ClassLoader)}, passing in the private classloader that this instance of Clojure must
-     * use.  In addition, if the system needs to garbage-collect the classloader used by this instance of Clojure,
-     * it must call the {@link #close()} method when it is done.<p>
-     *
-     * Calling this method activates additional checking around each call, avoiding leaks of Clojure's
-     * classloader to other parts of the system.  If ClJ is not being used in this manner, then this method may be
-     * ignored.
-     *
-     * @param privateClassloader The private container classloader.
+    /*
+     * Define Java interfaces corresponding to Clojure functions and call Clojure from
+     * Java as if it was Java.
      */
-    @SuppressWarnings("rawtypes")
-    public static void init(ClassLoader privateClassloader) {
-        ClassLoader origLoader = preInvoke();
-        Exception ex = null;
-        try {
-            Field dvalField = Var.class.getDeclaredField("dvals");
-            dvalField.setAccessible(true);
-            localThreadData = Possible.value(new LocalThreadData(privateClassloader, (ThreadLocal)dvalField.get(null)));
-            clojure.lang.Compiler.LOADER.bindRoot(privateClassloader);
-        } catch (IllegalAccessException e) {
-            ex = e;
-        } catch (NoSuchFieldException e) {
-            ex = e;
-        } finally {
-            postInvoke(origLoader);
-        }
-
-        if (ex != null) {
-            throw new RuntimeException("Failed to access Var.dvals", ex);
-        }
-    }
-
-    /**
-     * Close the current Clojure session.  Required if multiple Clojure sessions are being
-     * dynamically started/stopped in order to avoid leaking threads.
-     */
-    public void close() {
-        invoke("clojure.core/shutdown-agents");
-    }
 
     /**
      * Define an instance of a Clojure interface.  Calling methods on this instance will
@@ -120,37 +83,26 @@ public class ClJ {
      * @return T an instance of clojureInterface.
      */
     public static <T> T define(Class<T> clojureInterface) {
-        return define(clojureInterface.getClassLoader(), clojureInterface);
+        if (localThreadData.hasValue()) {
+            return define(localThreadData.get().classloader, clojureInterface);
+        } else {
+            return define(clojureInterface.getClassLoader(), clojureInterface);
+        }
     }
 
-    /**
-     * Define an instance of a Clojure interface using a specified classloader.  Calling
-     * methods on this instance will delegate to the corresponding Clojure functions as
-     * specified by the "Require" and "Ns" annotations.
-     * <code>
-     *   \@Require({"clojure.string :as str",
-     *             "clojure.java.io :as io"})
-     *   interface ClojureCalls {
-     *       \@Ns("str") String replace(String source, Pattern regex, String replacement);
-     *       \@Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
-     *   }
-     *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
-     *
-     *   // Then call methods on the 'clojure' object normally.
-     * </code>
-     *
-     * @param classloader The classloader to use to instantiate the Interface
-     * @param clojureInterface The Clojure interface to define.
-     * @param <T> The interface type.
-     * @return T an instance of clojureInterface.
-     */
+     // Implementation detail
     @SuppressWarnings("unchecked")
-    public static <T> T define(ClassLoader classloader, Class<T> clojureInterface) {
+    private static <T> T define(ClassLoader classloader, Class<T> clojureInterface) {
         Require requires = clojureInterface.getAnnotation(Require.class);
         String[] requirements = requires != null ? requires.value() : new String[] {};
         return (T) Proxy.newProxyInstance(classloader,
                 new Class[] {clojureInterface}, new ClojureModule(requirements));
     }
+
+
+    /*
+     * The dynamic Clojure DSL is implemented here
+     */
 
     /**
      * A "do" block for Java that dynamically calls Clojure code.  e.g.:
@@ -250,6 +202,18 @@ public class ClJ {
         return new ClojureFnInvocation(name,args);
     }
 
+    /*
+     * Functions for accessing Clojure directly
+     */
+
+    private static Object var(final String fullyQualifiedName) {
+        Object invokable = safeCall(new Callable<Object>() {
+            public Object call() throws Exception {
+                return Clojure.var(fullyQualifiedName);
+            }});
+        return invokable;
+    }
+
     /**
      * Directly execute the fully-namespace-qualified Cloure function identified by fn, passing args
      * as arguments.
@@ -260,10 +224,7 @@ public class ClJ {
      */
     @SuppressWarnings("unchecked")
     public static <T> T invoke(final String fn, Object...args) {
-        Object invokable = safeCall(new Callable<Object>() {
-            public Object call() throws Exception {
-                return Clojure.var(fn);
-            }});
+        Object invokable = var(fn);
         if (invokable instanceof IFn) {
             return (T) invoke((IFn) invokable, args);
         } else {
@@ -377,6 +338,10 @@ public class ClJ {
         }
         return result;
     }
+
+    /*
+     * Implementation detail for the dynamic Clojure DSL
+     */
 
     public static abstract class ClojureFn {
         abstract <T> T invoke(Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars);
@@ -532,7 +497,7 @@ public class ClJ {
     }
 
     /**
-     * Private implementation detail.  Not for use by clients.
+     * Private implementation detail for the Clojure / Java Interface bridge.  Not for use by clients.
      */
     public static class ClojureModule implements InvocationHandler {
         private Map<String, String> nsAliases;
@@ -549,7 +514,7 @@ public class ClJ {
                 Ns alias = method.getAnnotation(Ns.class);
                 if (alias == null) {
                     try {
-                        fn = Clojure.var(method.getName());
+                        fn = (IFn) ClJ.var(method.getName());
                     } catch (Exception e) {
                         throw new IllegalStateException("Function: " + method.getName() + "is not defined in the core namespace.", e);
                     }
@@ -559,7 +524,7 @@ public class ClJ {
                         throw new IllegalStateException(alias.value() + " is not aliased to any namespace.");
                     }
                     try {
-                        fn = Clojure.var(namespace, method.getName());
+                        fn = (IFn) ClJ.var(namespace + "/" + method.getName());
                     } catch (Exception e) {
                         throw new IllegalStateException("Undefined function: " + namespace + "/" + method.getName(), e);
                     }
@@ -602,6 +567,36 @@ public class ClJ {
             }
             return result.toString();
         }
+    }
+
+    /*
+     * Methods to support classloader-private instances of the Clojure runtime
+     */
+
+    @SuppressWarnings("rawtypes")
+    static void init(ClassLoader privateClassloader) {
+        ClassLoader origLoader = preInvoke();
+        Exception ex = null;
+        try {
+            Field dvalField = Var.class.getDeclaredField("dvals");
+            dvalField.setAccessible(true);
+            localThreadData = Possible.value(new LocalThreadData(privateClassloader, (ThreadLocal)dvalField.get(null)));
+            clojure.lang.Compiler.LOADER.bindRoot(privateClassloader);
+        } catch (IllegalAccessException e) {
+            ex = e;
+        } catch (NoSuchFieldException e) {
+            ex = e;
+        } finally {
+            postInvoke(origLoader);
+        }
+
+        if (ex != null) {
+            throw new RuntimeException("Failed to access Var.dvals", ex);
+        }
+    }
+
+    static void close() {
+        invoke("clojure.core/shutdown-agents");
     }
 
     private static <T> T safeCall(Callable<T> runInClojure) {
