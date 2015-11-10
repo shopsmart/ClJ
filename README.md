@@ -137,7 +137,7 @@ Then to use your new Clojure instance, PrivateClJ's API is the same as ClJ's API
 
 Note that data passed from one Clojure instance to another within the same container will fail Clojure *(instance?* checks.  E.g.: an instance of IPersistentList from one Clojure instance is not the same class as an instance of IPersistentList in a different Clojure instance in the same JVM.  Finding elegent ways to approach this challenge is a subject of ongoing API refinement in this library.
 
-Lastly, since you created your Clojure instance, if your container unloads your module, the module unloader also needs to close your Clojure instance and free all of the objects the Clojure environment allocated:
+Lastly, since you created a private Clojure instance, if your container unloads your module, the module unloader also needs to close your Clojure instance and free all of the objects the Clojure environment allocated:
 
 ```java
 
