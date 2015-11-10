@@ -117,7 +117,7 @@ This interface is produced by both the interface-based and the dynamic Clojure A
 
 The Java interface-based API is also usable to create multiple private instances of Clojure, like would be needed in Java containers like OSGi, Spring, and some web containers.  Here's how to set that up.
 
-First, define an interface to your Clojure API using the first (Java interfaced-based) API above.  Next, ensure that the Clojure and ClJ JARs are NOT anywhere on the classpath, but that their jars are available to the container in the file system.  Only the ClJ.api jar should be on the classpath.  Then, write code similar to the following to initialize a private Clojure instance using ClJ:
+First, define an interface to your Clojure functions using the first (Java interfaced-based) API above.  Next, ensure that the Clojure and ClJ JARs are NOT anywhere on the classpath, but that their jars are available to the container in the file system.  Only the ClJ.api jar should be on the classpath.  Then, write code similar to the following to initialize a private Clojure instance using ClJ:
 
 ```java
 
