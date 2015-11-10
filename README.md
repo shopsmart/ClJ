@@ -25,7 +25,7 @@ Java to Clojre interop DSL and utilities
     </dependency>
 ```
 
-where you substitute the latest version of the ClJ libraries for ${ClJ.version} or define a Maven
+where you substitute the version of the ClJ libraries for ${ClJ.version} or define a Maven
 property named ClJ.version to the correct value.
 
 ## There are two APIs:
