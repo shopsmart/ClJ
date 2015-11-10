@@ -64,20 +64,74 @@ of "let".  See the tests for documentation on what is supported.
                 $("str/replace", INPUT, Pattern.compile("C"), "see"));
 ```
 
-* The first API is also usable in a private classloader like found in Java containers like OSGi, Spring,
-and some web containers.  First, define an interface to your Clojure API like described above.  Next,
-ensure that Clojure and ClJ are NOT anywhere on the classpath, but that their jars are available
-to the container.  Then, write code similar to the following:
+### Methods that return Clojure collections
+
+Clojure's persistent collections API is convenient and easy to use from Clojure, but many of the interfaces do not interoperate nicely with Java's collections API or make it easy to write idiomatic Java code that interoperates with Clojure.  When ClJ invokes a method that returns any of Clojure's core collection types, it automatically wraps that collection in an instance of *IClojureIterable*.  While these collections are still immutable, this enables use by Java's foreach construct.  As-of this writing, this is the *IClojureIterable* interface definition:
 
 ```java
 
-    URL clojureJar = new File("/path/to/clojure.jar").toURI().toURL();
+    public interface IClojureIterable<T> extends Iterable<T> {
+        /**
+         * Return the underlying collection's size.
+         * @return the underlying collection's size.
+         */
+        int size();
+        /**
+         * Return true if the underlying collection is empty and false otherwise.
+         * @return true if the underlying collection is empty and false otherwise.
+         */
+        boolean isEmpty();
+        /**
+         * Returns the object referred to by the specified key or index.
+         *
+         * @param keyOrIndex The key or index to look up.
+         * @return the referenced object or throws {@link ArrayIndexOutOfBoundsException} on failure.
+         */
+        Object get(Object keyOrIndex);
+        /**
+         * Return the underlying Clojure object.
+         * @return the underlying Clojure object.
+         */
+        Object toClojure();
+    }
+```
+
+This is implemented in both the interface-based and the dynamic Clojure APIs.
+
+
+## Dynamic usage: Multiple Clojure instances inside a single Java VM.
+
+The Java interface-based API is also usable to create multiple private instances of Clojure, like would be needed in Java containers like OSGi, Spring, and some web containers.  Here's how to set that up.
+
+First, define an interface to your Clojure API like described in the first API above.  Next, ensure that the Clojure and ClJ JARs are NOT anywhere on the classpath, but that their jars are available to the container in the file system.  Only the ClJ.api jar should be on the classpath.  Then, write code similar to the following to initialize a private Clojure instance using ClJ:
+
+```java
+
+    URL clojureJar = new File("/path/to/clojure.jar").toURI().toURL();      // Customize this for your container
     URL cljToJavaJar = new File("/path/to/ClJ-version.jar").toURI().toURL();
     ClassLoader clojureClassloader = new URLClassLoader(new URL[] {clojureJar, cljToJavaJar}, parentClassloader);
     PrivateClJ clJ = new PrivateClJ(clojureClassloader);
-
-    lein = clJ.define(Leiningen.class);
 ```
+
+Then to use your new Clojure instance, PrivateClJ's API is the same as ClJ's API.  Define an instance of your interface using the #define method, and call methods on your object like usual.
+
+```java
+
+    lein = clJ.define(YourCljInterface.class);
+    lein.someClojureMethod("foo", "bar", "baz");
+```
+
+Note that data passed from one Clojure instance to another within the same container will fail Clojure *(instance?* checks.  E.g.: an instance of IPersistentList from one Clojure instance is not the same class as an instance of IPersistentList in a different Clojure instance in the same JVM.  Finding elegent ways to approach this challenge is a subject of ongoing API refinement in this library.
+
+Lastly, since you created your Clojure instance, if your container unloads your module, the module unloader also needs to close your Clojure instance and free all of the objects the Clojure environment allocated:
+
+```java
+
+   clJ.close()
+```
+
+
+## Documentation
 
 Complete Javadoc is provided.
 
