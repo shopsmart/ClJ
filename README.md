@@ -25,6 +25,9 @@ Java to Clojre interop DSL and utilities
     </dependency>
 ```
 
+where you substitute the latest version of the ClJ libraries for ${ClJ.version} or define a Maven
+property named ClJ.version to the correct value.
+
 ## There are two APIs:
 
 * One based on defining a Java interface to Clojure's functions
@@ -38,8 +41,8 @@ Java to Clojre interop DSL and utilities
         @Ns("u") void init();
         @Ns("u") void profiles();
         @Ns("p") Object read(String projectPath);
-        @Ns("cp") ISeq get_classpath(Object project);
-        @Ns("cp") ISeq ext_classpath(Object project);
+        @Ns("cp") IClojureIterable<String> get_classpath(Object project);
+        @Ns("cp") IClojureIterable<String> ext_classpath(Object project);
     }
 
     private Leiningen lein = ClJ.define(Leiningen.class);
@@ -53,15 +56,26 @@ Java to Clojre interop DSL and utilities
 
 * One for dynamically calling Clojure using a form similar to "do".  With this form, clojure functions
 can be passed easily to Clojure functions.  The DSL also provides a lexically-scoped implementation
-of "let".  See the tests for documentation on what is supported.
+of "let".  See the tests for documentation on what is supported.  Here is an example, from the integration
+tests:
 
 ```java
 
+    byte[] input = "I see because I C".getBytes();
+    final StringBufferOutputStream output = new StringBufferOutputStream();
+
     String result =
-        doAll(require("clojure.string :as str",
-                      "clojure.java.io :as io"),
-                $("io/copy", input, output),
-                $("str/replace", INPUT, Pattern.compile("C"), "see"));
+            doAll(require("clojure.string :as str",
+                    "clojure.java.io :as io",
+                    "clojure.core :as core"),
+                let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")),
+                        $("io/copy", input, output),
+                        $("core/str", "see", " because ", "see"),
+                        let(vars("see", "I C"),
+                                $("core/str", "see", " because ", "see"))));
+
+    assertEquals(INPUT, output.toString());
+    assertEquals("I C because I C", result);
 ```
 
 ### Methods that return Clojure collections
