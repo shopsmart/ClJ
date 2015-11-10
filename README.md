@@ -80,7 +80,7 @@ tests:
 
 ### Methods that return Clojure collections
 
-Clojure's persistent collections API is convenient and easy to use from Clojure, but many of the interfaces do not interoperate nicely with Java's collections API or make it easy to write idiomatic Java code that interoperates with Clojure.  When ClJ invokes a method that returns any of Clojure's core collection types, it automatically wraps that collection in an instance of *IClojureIterable*.  While these collections are still immutable, this enables use by Java's foreach construct.  As-of this writing, this is the *IClojureIterable* interface definition:
+Clojure's persistent collections APIs are convenient and easy to use from Clojure, but many of the interfaces do not interoperate nicely with Java's collections API or make it easy to write idiomatic Java code that interoperates with Clojure.  When ClJ invokes a method that returns any of Clojure's core collection types, it automatically wraps that collection in an instance of *IClojureIterable*.  While these collections are still immutable, this enables use by Java's foreach construct.  As-of this writing, this is the *IClojureIterable* interface definition:
 
 ```java
 
