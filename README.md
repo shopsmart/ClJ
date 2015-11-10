@@ -16,7 +16,12 @@ Java to Clojre interop DSL and utilities
     <dependency>
       <groupId>com.bradsdeals</groupId>
       <artifactId>ClJ</artifactId>
-      <version>0.5.0-SNAPSHOT</version>
+      <version>${ClJ.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.bradsdeals</groupId>
+      <artifactId>ClJ</artifactId>
+      <version>${ClJ.version}</version>
     </dependency>
 ```
 
@@ -57,6 +62,21 @@ of "let".  See the tests for documentation on what is supported.
                       "clojure.java.io :as io"),
                 $("io/copy", input, output),
                 $("str/replace", INPUT, Pattern.compile("C"), "see"));
+```
+
+* The first API is also usable in a private classloader like found in Java containers like OSGi, Spring,
+and some web containers.  First, define an interface to your Clojure API like described above.  Next,
+ensure that Clojure and ClJ are NOT anywhere on the classpath, but that their jars are available
+to the container.  Then, write code similar to the following:
+
+```java
+
+    URL clojureJar = new File("/path/to/clojure.jar").toURI().toURL();
+    URL cljToJavaJar = new File("/path/to/ClJ-version.jar").toURI().toURL();
+    ClassLoader clojureClassloader = new URLClassLoader(new URL[] {clojureJar, cljToJavaJar}, parentClassloader);
+    PrivateClJ clJ = new PrivateClJ(clojureClassloader);
+
+    lein = clJ.define(Leiningen.class);
 ```
 
 Complete Javadoc is provided.
