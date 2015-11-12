@@ -141,7 +141,7 @@ Lastly, since you created a private Clojure instance, if your container unloads 
 
 ```java
 
-   clJ.close()
+    clJ.close()
 ```
 
 
