@@ -27,7 +27,7 @@ public class PrivateClJ {
      */
     public PrivateClJ(ClassLoader context) {
         try {
-            cljBridgeClass = context.loadClass("com.bradsdeals.clj.ClJ");
+            cljBridgeClass = Class.forName("com.bradsdeals.clj.ClJ", true, context);
             final Method init = cljBridgeClass.getDeclaredMethod("init", ClassLoader.class);
             init.setAccessible(true);
             init.invoke(null, context);

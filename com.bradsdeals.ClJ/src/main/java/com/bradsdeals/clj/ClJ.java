@@ -20,6 +20,7 @@ import com.bradsdeals.clj.ClJAnnotations.Require;
 import com.bradsdeals.clj.wrappers.ClojureMap;
 import com.bradsdeals.clj.wrappers.ClojureSeq;
 import com.bradsdeals.clj.wrappers.ClojureVector;
+import com.coconut_palm_software.possible.Nulls;
 import com.coconut_palm_software.possible.Possible;
 
 import clojure.java.api.Clojure;
@@ -29,6 +30,7 @@ import clojure.lang.IPersistentVector;
 import clojure.lang.ISeq;
 import clojure.lang.RT;
 import clojure.lang.Seqable;
+import clojure.lang.Symbol;
 import clojure.lang.Var;
 
 /**
@@ -85,15 +87,15 @@ public class ClJ {
      */
     public static <T> T define(Class<T> clojureInterface) {
         if (localThreadData.hasValue()) {
-            return define(localThreadData.get().classloader, clojureInterface);
+            return define(clojureInterface, localThreadData.get().classloader);
         } else {
-            return define(clojureInterface.getClassLoader(), clojureInterface);
+            return define(clojureInterface, clojureInterface.getClassLoader());
         }
     }
 
      // Implementation detail
     @SuppressWarnings("unchecked")
-    private static <T> T define(ClassLoader classloader, Class<T> clojureInterface) {
+    private static <T> T define(Class<T> clojureInterface, ClassLoader classloader) {
         Require requires = clojureInterface.getAnnotation(Require.class);
         String[] requirements = requires != null ? requires.value() : new String[] {};
         return (T) Proxy.newProxyInstance(classloader,
@@ -203,6 +205,7 @@ public class ClJ {
         return new ClojureFnInvocation(name,args);
     }
 
+
     /*
      * Functions for accessing Clojure directly
      */
@@ -210,6 +213,9 @@ public class ClJ {
     private static Object var(final String fullyQualifiedName) {
         Object invokable = safeCall(new Callable<Object>() {
             public Object call() throws Exception {
+                if (localThreadData.hasValue()) {
+                    return localThreadData.get().fn(fullyQualifiedName);
+                }
                 return Clojure.var(fullyQualifiedName);
             }});
         return invokable;
@@ -268,6 +274,9 @@ public class ClJ {
     }
 
     private static Object invokeInternal(IFn fn, Object...args) {
+        if (args == null) {
+            return fn.invoke();
+        }
         switch (args.length) {
         case 0:
             return fn.invoke();
@@ -507,6 +516,7 @@ public class ClJ {
 
         protected ClojureModule(String... nsAliases) {
             this.nsAliases = computeNsAliases(nsAliases);
+            // FIXME: Check for the existence of each ns/fn defined by the interface and fail fast if not found.
         }
 
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -580,11 +590,13 @@ public class ClJ {
         try {
             Field dvalField = Var.class.getDeclaredField("dvals");
             dvalField.setAccessible(true);
-            localThreadData = Possible.value(new LocalThreadData(privateClassloader, (ThreadLocal)dvalField.get(null)));
+            final LocalThreadData threadData = new LocalThreadData(privateClassloader, (ThreadLocal)dvalField.get(null));
+            localThreadData = Possible.value(threadData);
             safeCall(new Callable<Object>() {
                 public Object call() throws Exception {
-                    RT.var("clojure.core", "require");
-                    RT.var("clojure.core", "resolve");
+                    IFn require = RT.var("clojure.core", "require");
+                    IFn resolve = RT.var("clojure.core", "resolve");
+                    threadData.setResolvers(require, resolve);
                     clojure.lang.Compiler.LOADER.bindRoot(privateClassloader);
                     return null;
                 }
@@ -606,13 +618,13 @@ public class ClJ {
 
     private static <T> T safeCall(Callable<T> runInClojure) {
         if (localThreadData.hasValue()) {
-            ClassLoader origloader = preInvoke();
+            ClassLoader origloader = localThreadData.get().preInvoke();
             try {
                 return runInClojure.call();
             } catch (Exception e) {
                 throw new RuntimeException("Exception calling Clojure", e);
             } finally {
-                postInvoke(origloader);
+                localThreadData.get().postInvoke(origloader);
             }
         } else {
             try {
@@ -623,34 +635,60 @@ public class ClJ {
         }
     }
 
-    private static ClassLoader preInvoke() {
-        final ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(localThreadData.get().classloader);
-        localThreadData.get().callDepth.get().getAndIncrement();
-        return originalClassloader;
-    }
-
-    private static void postInvoke(ClassLoader loader) {
-        if (localThreadData.get().callDepth.get().decrementAndGet() == 0) {
-            localThreadData.get().dvals.remove();
-            localThreadData.get().callDepth.remove();
-        }
-        Thread.currentThread().setContextClassLoader(loader);
-    }
-
     private static class LocalThreadData {
         public ClassLoader classloader;
         @SuppressWarnings("rawtypes")
         public ThreadLocal dvals;
+        private IFn require;
+        private IFn resolve;
+
         public final ThreadLocal<AtomicLong> callDepth = new ThreadLocal<AtomicLong>() {
           protected AtomicLong initialValue() {
               return new AtomicLong(0);
           }
         };
+
         @SuppressWarnings("rawtypes")
         public LocalThreadData(ClassLoader classloader, ThreadLocal dvals) {
             this.classloader = classloader;
             this.dvals = dvals;
+        }
+
+        private void assertInitialized(IFn require, IFn resolve) {
+            Nulls.assertNotNull(require, "require");
+            Nulls.assertNotNull(resolve, "resolve");
+        }
+
+        public void setResolvers(IFn require, IFn resolve) {
+            assertInitialized(require, resolve);
+            this.require = require;
+            this.resolve = resolve;
+        }
+
+        public ClassLoader preInvoke() {
+            final ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
+            Thread.currentThread().setContextClassLoader(localThreadData.get().classloader);
+            callDepth.get().getAndIncrement();
+            return originalClassloader;
+        }
+
+        public void postInvoke(ClassLoader loader) {
+            if (callDepth.get().decrementAndGet() == 0) {
+                dvals.remove();    // Fixed according to http://dev.clojure.org/jira/browse/CLJ-1125???
+                callDepth.remove();
+            }
+            Thread.currentThread().setContextClassLoader(loader);
+        }
+
+        public IFn fn(String namespacedFunction) {
+            assertInitialized(require, resolve);
+            Var var = (Var)resolve.invoke(Symbol.create(namespacedFunction));
+            if (var == null) {
+                String[] parts = namespacedFunction.split("/");
+                require.invoke(Symbol.create(parts[0]));
+                var = RT.var(parts[0], parts[1]);
+            }
+            return var;
         }
     }
 

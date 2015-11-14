@@ -34,9 +34,9 @@ property named ClJ.version to the correct value.
 
 ```java
 
-    @Require({"Leiningen.core.user :as u",
-              "Leiningen.core.project :as p",
-              "Leiningen.core.classpath :as cp"})
+    @Require({"leiningen.core.user :as u",
+              "leiningen.core.project :as p",
+              "leiningen.core.classpath :as cp"})
     private interface Leiningen {
         @Ns("u") void init();
         @Ns("u") void profiles();
@@ -54,10 +54,9 @@ property named ClJ.version to the correct value.
     }
 ```
 
-* One for dynamically calling Clojure using a form similar to "do".  With this form, clojure functions
+* One for dynamically calling Clojure using a form similar to "do".  With this form, Clojure functions
 can be passed easily to Clojure functions.  The DSL also provides a lexically-scoped implementation
-of "let".  See the tests for documentation on what is supported.  Here is an example, from the integration
-tests:
+of "let".  See the tests for documentation on what is supported.  Here is an example, from the integration tests:
 
 ```java
 
@@ -135,7 +134,7 @@ Then to use your new Clojure instance, PrivateClJ's API is the same as ClJ's API
     lein.someClojureMethod("foo", "bar", "baz");
 ```
 
-Note that data passed from one Clojure instance to another within the same container will fail Clojure *(instance?* checks.  E.g.: an instance of IPersistentList from one Clojure instance is not the same class as an instance of IPersistentList in a different Clojure instance in the same JVM.  Finding elegent ways to approach this challenge is a subject of ongoing API refinement in this library.
+Note that data passed from one Clojure instance to another within the same container will fail Clojure *(instance?* checks.  E.g.: an instance of IPersistentList from one Clojure instance is not the same class as an instance of IPersistentList in a different Clojure instance in the same JVM.  Finding elegant ways to approach this challenge is a subject of ongoing API refinement in this library.
 
 Lastly, since you created a private Clojure instance, if your container unloads your module, the module unloader also needs to close your Clojure instance and free all of the objects the Clojure environment allocated:
 
