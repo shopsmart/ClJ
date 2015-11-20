@@ -2,6 +2,7 @@ package com.bradsdeals.clj.wrappers;
 
 import java.util.Iterator;
 
+import com.bradsdeals.clj.ClJ;
 import com.coconut_palm_software.possible.Possible;
 
 import clojure.lang.ISeq;
@@ -43,7 +44,7 @@ public class ClojureSeq implements IClojureIterable<Object> {
             public Object next() {
                 Object result = rest.get().first();
                 rest = Possible.value(rest.get().next());
-                return result;
+                return ClJ.toJava(result);
             }};
     }
 

@@ -3,6 +3,8 @@ package com.bradsdeals.clj.wrappers;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import com.bradsdeals.clj.ClJ;
+
 import clojure.lang.IPersistentVector;
 
 public class ClojureVector implements IClojureIterable<Object> {
@@ -27,7 +29,7 @@ public class ClojureVector implements IClojureIterable<Object> {
                     throw new NoSuchElementException("Past end of iterator");
                 }
                 ++pos;
-                return delegate.nth(pos);
+                return ClJ.toJava(delegate.nth(pos));
             }
         };
     }
@@ -41,7 +43,7 @@ public class ClojureVector implements IClojureIterable<Object> {
     }
 
     public Object get(Object keyOrIndex) {
-        return delegate.nth((Integer)keyOrIndex);
+        return ClJ.toJava(delegate.nth((Integer)keyOrIndex));
     }
 
     public Object toClojure() {
