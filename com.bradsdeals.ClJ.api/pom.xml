@@ -8,7 +8,7 @@
 
   <groupId>com.bradsdeals</groupId>
   <artifactId>com.bradsdeals.ClJ.api</artifactId>
-  <version>0.5.8-SNAPSHOT</version>
+  <version>0.5.9</version>
   <name>ClJ API</name>
   <description>Clojure-Java bridge annotation API</description>
 
