@@ -49,8 +49,9 @@ import clojure.lang.Var;
  * types of the Clojure function being called. Annotations on the Java interface
  * specify required namespaces and annotations on the interface methods specify
  * the namespace alias required to access the corresponding function.  Once this
- * is complete, you can use the {@link #define(Class)} function to create an instance
- * of the interface referencing the corresponding Clojure functions.<p>
+ * is complete, you can use the {@link #define(Class, String...)} function to
+ * create an instance of the interface referencing the corresponding Clojure
+ * functions.<p>
  *
  * The dynamic method mimics Clojure's "do" form, but allows specifying require
  * clauses with aliases at the beginning.  See {@link #doAll(String[], ClojureFn...)}
@@ -82,24 +83,25 @@ public class ClJ {
      * </code>
      *
      * @param clojureInterface The Clojure interface to define.
+     * @param loadPackages Zero or more Clojure source code packages to load in order to define the interface
      * @param <T> The interface type.
      * @return T an instance of clojureInterface.
      */
-    public static <T> T define(Class<T> clojureInterface) {
+    public static <T> T define(Class<T> clojureInterface, String...loadPackages) {
         if (localThreadData.hasValue()) {
-            return define(clojureInterface, localThreadData.get().classloader);
+            return define(clojureInterface, localThreadData.get().classloader, loadPackages);
         } else {
-            return define(clojureInterface, clojureInterface.getClassLoader());
+            return define(clojureInterface, clojureInterface.getClassLoader(), loadPackages);
         }
     }
 
      // Implementation detail
     @SuppressWarnings("unchecked")
-    private static <T> T define(Class<T> clojureInterface, ClassLoader classloader) {
+    private static <T> T define(Class<T> clojureInterface, ClassLoader classloader, String[] loadPackages) {
         Require requires = clojureInterface.getAnnotation(Require.class);
         String[] requirements = requires != null ? requires.value() : new String[] {};
         return (T) Proxy.newProxyInstance(classloader,
-                new Class[] {clojureInterface}, new ClojureModule(requirements));
+                new Class[] {clojureInterface}, new ClojureModule(loadPackages, requirements));
     }
 
 
@@ -227,6 +229,7 @@ public class ClJ {
      *
      * @param fn The fully-namespace-qualified Clojure function to call.
      * @param args The arguments to pass.
+     * @param <T> The type of the return value.
      * @return the value the Clojure function returned.
      */
     @SuppressWarnings("unchecked")
@@ -259,8 +262,15 @@ public class ClJ {
         }));
     }
 
+    /**
+     * Turn a Clojure result into an object that is easier for Java to handle.
+     *
+     * @param result The result value to wrap.
+     * @param <T> The type of the return value.
+     * @return If the result is a core Clojure collection, returns an instanceof IClojureIterable, else returns result.
+     */
     @SuppressWarnings("unchecked")
-    private static <T> T toJava(Object result) {
+    public static <T> T toJava(Object result) {
         if (result instanceof IPersistentMap) {
             return (T) new ClojureMap((IPersistentMap) result);
         } else if (result instanceof IPersistentVector) {
@@ -514,9 +524,11 @@ public class ClJ {
         @SuppressWarnings("unchecked")
         private Map<String,IFn> fnCache = hashMap();
 
-        protected ClojureModule(String... nsAliases) {
+        protected ClojureModule(String[] loadPackages, String... nsAliases) {
             this.nsAliases = computeNsAliases(nsAliases);
-            // FIXME: Check for the existence of each ns/fn defined by the interface and fail fast if not found.
+            for (String ns : loadPackages) {
+                loadNamespaceFromClasspath(ns);
+            }
         }
 
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -612,8 +624,14 @@ public class ClJ {
         }
     }
 
-    static void close() {
+    /**
+     * If {@link #define(Class, ClassLoader, String...)} is called with a classloader, when you
+     * want to shut down the Clojure instance, you need to call {@link #close()} to free resources
+     * held by Clojure and by this library.
+     */
+    public static void close() {
         invoke("clojure.core/shutdown-agents");
+        localThreadData = Possible.emptyValue();
     }
 
     private static <T> T safeCall(Callable<T> runInClojure) {
@@ -690,6 +708,15 @@ public class ClJ {
             }
             return var;
         }
+    }
+
+    private static IFn loadNamespace = null;
+
+    private static void loadNamespaceFromClasspath(String packagePath) {
+        if (loadNamespace == null) {
+            loadNamespace = (IFn) var("clojure.core/load");
+        }
+        loadNamespace.invoke(packagePath);
     }
 
     private static Possible<LocalThreadData> localThreadData = Possible.emptyValue();

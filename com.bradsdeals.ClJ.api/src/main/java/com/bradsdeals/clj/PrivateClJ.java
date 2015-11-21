@@ -20,7 +20,7 @@ public class PrivateClJ {
      * Create a classloader-private instance of the ClJ Clojure-Java bridge.  To use this class,
      * create a {@link URLClassLoader} that points to the ClJ jar and your Clojure Jar.
      * Normally, this classloader should be created as a child of your current classloader.
-     * Pass your custom classloader into this constructor, then use the {@link #define(Class)}
+     * Pass your custom classloader into this constructor, then use the {@link #define(Class, String...)}
      * method to define Java interfaces referring to Clojure functions.
      *
      * @param context The classloader that will host this Clojure instance.
@@ -31,7 +31,7 @@ public class PrivateClJ {
             final Method init = cljBridgeClass.getDeclaredMethod("init", ClassLoader.class);
             init.setAccessible(true);
             init.invoke(null, context);
-            cljDefine = cljBridgeClass.getDeclaredMethod("define", Class.class);
+            cljDefine = cljBridgeClass.getDeclaredMethod("define", Class.class, String[].class);
             cljDefine.setAccessible(true);
             cljClose = cljBridgeClass.getDeclaredMethod("close");
             cljClose.setAccessible(true);
@@ -57,13 +57,14 @@ public class PrivateClJ {
      * </code>
      *
      * @param clojureInterface The Clojure interface to define.
+     * @param loadPackages Zero or more Clojure source code packages to load in order to define the interface
      * @param <T> The interface type.
      * @return T an instance of clojureInterface.
      */
     @SuppressWarnings("unchecked")
-    public <T> T define(Class<T> clojureInterface) {
+    public <T> T define(Class<T> clojureInterface, String...loadPackages) {
         try {
-            return (T) cljDefine.invoke(null, clojureInterface);
+            return (T) cljDefine.invoke(null, clojureInterface, loadPackages);
         } catch (Exception e) {
             throw new IllegalStateException("Cannot define Clojure interface", e);
         }
