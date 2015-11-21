@@ -3,6 +3,7 @@ package com.bradsdeals.clj.wrappers;
 import java.util.Iterator;
 
 import com.bradsdeals.clj.ClJ;
+import com.coconut_palm_software.possible.Nulls;
 import com.coconut_palm_software.possible.Possible;
 
 import clojure.lang.ISeq;
@@ -28,22 +29,17 @@ public class ClojureSeq implements IClojureIterable<Object> {
      */
     public Iterator<Object> iterator() {
         return new Iterator<Object>() {
-            private Possible<ISeq> rest = Possible.emptyValue();
-
-            private void init() {
-                if (rest.isEmpty()) {
-                    rest = Possible.value(delegate);
-                }
+            private Possible<ISeq> current; {
+                current = Possible.value(delegate);
             }
 
             public boolean hasNext() {
-                init();
-                return rest.get() != null;
+                return current.hasValue();
             }
 
             public Object next() {
-                Object result = rest.get().first();
-                rest = Possible.value(rest.get().next());
+                Object result = current.get().first();
+                current = Nulls.possible(current.get().next());
                 return ClJ.toJava(result);
             }};
     }
