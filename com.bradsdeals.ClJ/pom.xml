@@ -10,7 +10,7 @@
 
   <groupId>com.bradsdeals</groupId>
   <artifactId>com.bradsdeals.ClJ</artifactId>
-  <version>0.5.9</version>
+  <version>0.5.10</version>
   <packaging>jar</packaging>
 
   <name>ClJ</name>

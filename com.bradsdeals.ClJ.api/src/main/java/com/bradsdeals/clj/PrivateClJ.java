@@ -25,6 +25,30 @@ public class PrivateClJ {
      *
      * @param context The classloader that will host this Clojure instance.
      */
+    public PrivateClJ() {
+        try {
+            cljBridgeClass = Class.forName("com.bradsdeals.clj.ClJ");
+            cljDefine = cljBridgeClass.getDeclaredMethod("define", Class.class, String[].class);
+            cljDefine.setAccessible(true);
+            cljClose = cljBridgeClass.getDeclaredMethod("close");
+            cljClose.setAccessible(true);
+        } catch (Exception e) {
+            throw new IllegalStateException("Cannot initialize private Clojure instance", e);
+        }
+    }
+
+    /**
+     * NON-PUBLIC API - This method is called internally to the framework when a bundle is being
+     * initialized.
+     * <p>
+     * Create a classloader-private instance of the ClJ Clojure-Java bridge.  To use this class,
+     * create a {@link URLClassLoader} that points to the ClJ jar and your Clojure Jar.
+     * Normally, this classloader should be created as a child of your current classloader.
+     * Pass your custom classloader into this constructor, then use the {@link #define(Class, String...)}
+     * method to define Java interfaces referring to Clojure functions.
+     *
+     * @param context The classloader that will host this Clojure instance.
+     */
     public PrivateClJ(ClassLoader context) {
         try {
             cljBridgeClass = Class.forName("com.bradsdeals.clj.ClJ", true, context);
