@@ -17,13 +17,8 @@ public class PrivateClJ {
     private final Method cljClose;
 
     /**
-     * Create a classloader-private instance of the ClJ Clojure-Java bridge.  To use this class,
-     * create a {@link URLClassLoader} that points to the ClJ jar and your Clojure Jar.
-     * Normally, this classloader should be created as a child of your current classloader.
-     * Pass your custom classloader into this constructor, then use the {@link #define(Class, String...)}
-     * method to define Java interfaces referring to Clojure functions.
-     *
-     * @param context The classloader that will host this Clojure instance.
+     * Create a classloader-private instance of the ClJ Clojure-Java bridge.  This API should be
+     * used from within a bundle to access its private ClJ / Clojure instance.
      */
     public PrivateClJ() {
         try {
