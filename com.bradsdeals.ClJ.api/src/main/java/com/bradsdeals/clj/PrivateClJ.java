@@ -19,10 +19,13 @@ public class PrivateClJ {
     /**
      * Create a classloader-private instance of the ClJ Clojure-Java bridge.  This API should be
      * used from within a bundle to access its private ClJ / Clojure instance.
+     *
+     * @param cljBridgeClass a {@link Class} referencing the classloader-local instance of ClJ to use.
      */
-    public PrivateClJ() {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public PrivateClJ(Class cljBridgeClass) {
         try {
-            cljBridgeClass = Class.forName("com.bradsdeals.clj.ClJ");
+            this.cljBridgeClass = cljBridgeClass;
             cljDefine = cljBridgeClass.getDeclaredMethod("define", Class.class, String[].class);
             cljDefine.setAccessible(true);
             cljClose = cljBridgeClass.getDeclaredMethod("close");
