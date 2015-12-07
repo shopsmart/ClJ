@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 import com.bradsdeals.clj.ClJAnnotations.Ns;
 import com.bradsdeals.clj.ClJAnnotations.Pt;
 import com.bradsdeals.clj.ClJAnnotations.Require;
-import com.bradsdeals.clj.io.StringBufferOutputStream;
+import com.bradsdeals.clj.wrappers.StringBufferOutputStream;
 
 import junit.framework.TestCase;
 

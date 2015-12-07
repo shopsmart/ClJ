@@ -1,4 +1,4 @@
-package com.bradsdeals.clj.io;
+package com.bradsdeals.clj.wrappers;
 
 import java.io.IOException;
 import java.io.OutputStream;
