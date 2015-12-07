@@ -29,7 +29,6 @@ public class ClJTest extends TestCase {
         void copy(@Pt({ InputStream.class, Reader.class, File.class, byte[].class, String.class }) Object input,
                 @Pt({ OutputStream.class, Writer.class, File.class }) Object output) throws IOException;
     }
-
     private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
 
     private static final String INPUT = "I see because I C";
@@ -76,7 +75,8 @@ public class ClJTest extends TestCase {
         final StringBufferOutputStream output = new StringBufferOutputStream();
 
         String result = doAll(require("clojure.string :as str", "clojure.java.io :as io", "clojure.core :as core"),
-                let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")), $("io/copy", input, output),
+                let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")),
+                        $("io/copy", input, output),
                         $("core/str", "see", " because ", "see")));
 
         assertEquals(INPUT, output.toString());

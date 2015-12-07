@@ -10,7 +10,7 @@
 
   <groupId>com.bradsdeals</groupId>
   <artifactId>com.bradsdeals.ClJ</artifactId>
-  <version>0.5.11</version>
+  <version>0.6.0</version>
   <packaging>jar</packaging>
 
   <name>ClJ</name>
@@ -49,13 +49,13 @@
     <dependency>
       <groupId>com.coconut_palm_software</groupId>
       <artifactId>com.coconut_palm_software.possible</artifactId>
-      <version>1.0.1-SNAPSHOT</version>
+      <version>1.0.4</version>
     </dependency>
 
     <dependency>
       <groupId>com.bradsdeals</groupId>
       <artifactId>com.bradsdeals.ClJ.api</artifactId>
-      <version>0.5.8-SNAPSHOT</version>
+      <version>0.6.0</version>
     </dependency>
 
     <dependency>

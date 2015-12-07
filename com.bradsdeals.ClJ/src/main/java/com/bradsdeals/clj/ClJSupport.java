@@ -3,10 +3,10 @@ package com.bradsdeals.clj;
 import static com.coconut_palm_software.possible.iterable.CollectionFactory.*;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -17,6 +17,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.bradsdeals.clj.ClJAnnotations.Ns;
 import com.bradsdeals.clj.ClJAnnotations.Pt;
 import com.bradsdeals.clj.ClJAnnotations.Require;
+import com.bradsdeals.clj.internal.dsl.ClojureFn;
+import com.bradsdeals.clj.internal.dsl.ClojureFnInvocation;
+import com.bradsdeals.clj.internal.dsl.ClojureFnLiteral;
+import com.bradsdeals.clj.internal.dsl.ClojureLet;
+import com.bradsdeals.clj.internal.dsl.ClojureVar;
 import com.bradsdeals.clj.wrappers.ClojureMap;
 import com.bradsdeals.clj.wrappers.ClojureSeq;
 import com.bradsdeals.clj.wrappers.ClojureVector;
@@ -59,35 +64,58 @@ import clojure.lang.Var;
  *
  * @author dorme
  */
-public class ClJ {
+public class ClJSupport implements IClJ {
+
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClojure#init(java.lang.ClassLoader)
+     */
+    @SuppressWarnings("rawtypes")
+    public void init(final ClassLoader privateClassloader) {
+        Exception ex = null;
+        try {
+            Field dvalField = Var.class.getDeclaredField("dvals");
+            dvalField.setAccessible(true);
+            final LocalThreadData threadData = new LocalThreadData(privateClassloader, (ThreadLocal)dvalField.get(null));
+            localThreadData = Possible.value(threadData);
+            safeCall(new Callable<Object>() {
+                public Object call() throws Exception {
+                    IFn require = RT.var("clojure.core", "require");
+                    IFn resolve = RT.var("clojure.core", "resolve");
+                    threadData.setResolvers(require, resolve);
+                    clojure.lang.Compiler.LOADER.bindRoot(privateClassloader);
+                    return null;
+                }
+            });
+        } catch (IllegalAccessException e) {
+            ex = e;
+        } catch (NoSuchFieldException e) {
+            ex = e;
+        }
+
+        if (ex != null) {
+            throw new RuntimeException("Failed to access Var.dvals", ex);
+        }
+    }
+
+
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClojure#close()
+     */
+    public void close() {
+        invoke("clojure.core/shutdown-agents");
+        localThreadData = Possible.emptyValue();
+    }
+
 
     /*
      * Define Java interfaces corresponding to Clojure functions and call Clojure from
      * Java as if it was Java.
      */
 
-    /**
-     * Define an instance of a Clojure interface.  Calling methods on this instance will
-     * delegate to the corresponding Clojure functions as specified by the "Require" and
-     * "Ns" annotations.
-     * <code>
-     *   \@Require({"clojure.string :as str",
-     *             "clojure.java.io :as io"})
-     *   interface ClojureCalls {
-     *       \@Ns("str") String replace(String source, Pattern regex, String replacement);
-     *       \@Ns("io") void copy(byte[] input, OutputStream output) throws IOException;
-     *   }
-     *   private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
-     *
-     *   // Then call methods on the 'clojure' object normally.
-     * </code>
-     *
-     * @param clojureInterface The Clojure interface to define.
-     * @param loadPackages Zero or more Clojure source code packages to load in order to define the interface
-     * @param <T> The interface type.
-     * @return T an instance of clojureInterface.
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClJ#define(java.lang.Class, java.lang.String[])
      */
-    public static <T> T define(Class<T> clojureInterface, String...loadPackages) {
+    public <T> T define(Class<T> clojureInterface, String...loadPackages) {
         if (localThreadData.hasValue()) {
             return define(clojureInterface, localThreadData.get().classloader, loadPackages);
         } else {
@@ -97,11 +125,11 @@ public class ClJ {
 
      // Implementation detail
     @SuppressWarnings("unchecked")
-    private static <T> T define(Class<T> clojureInterface, ClassLoader classloader, String[] loadPackages) {
+    private <T> T define(Class<T> clojureInterface, ClassLoader classloader, String[] loadPackages) {
         Require requires = clojureInterface.getAnnotation(Require.class);
         String[] requirements = requires != null ? requires.value() : new String[] {};
         return (T) Proxy.newProxyInstance(classloader,
-                new Class[] {clojureInterface}, new ClojureModule(loadPackages, requirements));
+                new Class[] {clojureInterface}, new ClojureModule(this, loadPackages, requirements));
     }
 
 
@@ -109,59 +137,33 @@ public class ClJ {
      * The dynamic Clojure DSL is implemented here
      */
 
-    /**
-     * A "do" block for Java that dynamically calls Clojure code.  e.g.:
-     * <code>
-     * doAll(require("Leiningen.core.user :as l",
-     *               "clojure.java.io :as io"),
-     *     $("l/init"),
-     *     $("l/profiles")
-     *     $("io/copy", "/tmp/sourcefile", "/tmp/outputfile"));
-     * </code>
-     *
-     * @param aliases A string array of Clojure package aliases.  A helper {@link #require(String...)}
-     * function can easily provide this array.
-     * @param block A varargs parameter containing the function invocations to run.  These are obtained
-     * via the {@link #$(String, Object...)} factory function.  IFn objects may be resolved via the {@link #fn(String)}
-     * function.
-     * @param <T> The result type.
-     *
-     * @return The result of the last function call.
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClJ#doAll(java.lang.String[], com.bradsdeals.clj.internal.dsl.ClojureFn[])
      */
     @SuppressWarnings("unchecked")
-    public static <T> T doAll(String[] aliases, ClojureFn...block) {
+    public <T> T doAll(String[] aliases, ClojureFn...block) {
         Map<String, String> nsAliases = computeNsAliases(aliases);
         Object result = null;
         for (ClojureFn fn : block) {
+            if (fn instanceof IClojureCaller) {
+                ((IClojureCaller)fn).setClojure(this);
+            }
             result = fn.invoke(nsAliases, new LinkedList<HashMap<String,Object>>());
         }
         return (T)result;
     }
 
-    /**
-     * Let expression.  Vars are lexically scoped to the let expression's block.  Let expressions
-     * can be nested, in which case inner let expressions can redeclare the same variable names and
-     * shadow outer variables.  Whenever a let expression is in scope, all strings are first resolved
-     * against declared variable names and values substituted.  Just like in Clojure, variables can
-     * contain any value, including IFns.
-     *
-     * @param vars An array of ClojarVar objects, normally created using the {@link #vars(Object...)} function.
-     * @param block 0-n Clojure expressions to execute with vars in scope.
-     * @return The result of evaluating the last expression in block or null if block is empty.
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClJ#let(com.bradsdeals.clj.internal.dsl.ClojureVar[], com.bradsdeals.clj.internal.dsl.ClojureFn[])
      */
-    public static ClojureLet let(ClojureVar[] vars, ClojureFn...block) {
+    public ClojureLet let(ClojureVar[] vars, ClojureFn...block) {
         return new ClojureLet(vars, block);
     }
 
-    /**
-     * Declare an array of ClojureVar objects to be used as the initial parameter to a let expression.
-     * There must be an even number of arguments, alternating between String and Clojure expression
-     * objects.
-     *
-     * @param nvPairs The variables to declare as a sequence of names and values.
-     * @return an array of ClojureVar objects suitable for a let expression.
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClJ#vars(java.lang.Object[])
      */
-    public static ClojureVar[] vars(Object...nvPairs) {
+    public ClojureVar[] vars(Object...nvPairs) {
         if (nvPairs.length % 2 != 0) {
             throw new IllegalArgumentException("There must be an even number of values in a let binding");
         }
@@ -172,38 +174,24 @@ public class ClJ {
         return result.toArray(new ClojureVar[nvPairs.length/2]);
     }
 
-    /**
-     * A convenience factory method that returns its parameter list as a String[].  Intended to be used to generate
-     * the String[] of namespace aliases used by {@link #doAll(String[], ClojureFn...)}.
-     *
-     * @param aliases The aliases to return.
-     * @return A String[] containing the aliases.
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClJ#require(java.lang.String[])
      */
-    public static String[] require(String...aliases) {
+    public String[] require(String...aliases) {
         return aliases;
     }
 
-    /**
-     * Return a ClojureFn to be used inside a {@link #doAll(String[], ClojureFn...)} form
-     * for functions that expect IFn objects as parameters.  Resolves namespace aliases
-     * declared in the requires clause of the {@link #doAll(String[], ClojureFn...)} function.
-     *
-     * @param name The alias-qualified name of the Clojure function to return.  e.g.: "s/replace"
-     * @return An unresolved ClojureFn that will be resolved during execution of {@link #doAll(String[], ClojureFn...)}.
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClJ#fn(java.lang.String)
      */
-    public static ClojureFnLiteral fn(String name) {
+    public ClojureFnLiteral fn(String name) {
         return new ClojureFnLiteral(name);
     }
 
-    /**
-     * Return an unresolved ClojureFnInvocation for execution by a {@link #doAll(String[], ClojureFn...)}
-     * form.
-     *
-     * @param name The namespace-aliased name of the function to call. e.g.: "s/replace".
-     * @param args The function's arguments.
-     * @return A ClojureFnInvocation that can be executed by {@link #doAll(String[], ClojureFn...)}.
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClJ#$(java.lang.String, java.lang.Object[])
      */
-    public static ClojureFnInvocation $(String name, Object...args) {
+    public ClojureFnInvocation $(String name, Object...args) {
         return new ClojureFnInvocation(name,args);
     }
 
@@ -212,7 +200,10 @@ public class ClJ {
      * Functions for accessing Clojure directly
      */
 
-    private static Object var(final String fullyQualifiedName) {
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClojure#var(java.lang.String)
+     */
+    public Object var(final String fullyQualifiedName) {
         Object invokable = safeCall(new Callable<Object>() {
             public Object call() throws Exception {
                 if (localThreadData.hasValue()) {
@@ -223,17 +214,18 @@ public class ClJ {
         return invokable;
     }
 
-    /**
-     * Directly execute the fully-namespace-qualified Cloure function identified by fn, passing args
-     * as arguments.
-     *
-     * @param fn The fully-namespace-qualified Clojure function to call.
-     * @param args The arguments to pass.
-     * @param <T> The type of the return value.
-     * @return the value the Clojure function returned.
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClojure#var(java.lang.String, java.lang.String)
+     */
+    public Object var(final String namespace, final String fn) {
+        return var(namespace + "/" + fn);
+    }
+
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClojure#invoke(java.lang.String, java.lang.Object[])
      */
     @SuppressWarnings("unchecked")
-    public static <T> T invoke(final String fn, Object...args) {
+    public <T> T invoke(final String fn, Object...args) {
         Object invokable = var(fn);
         if (invokable instanceof IFn) {
             return (T) invoke((IFn) invokable, args);
@@ -245,16 +237,12 @@ public class ClJ {
         }
     }
 
-    /**
-     * Directly execute the Clojure function identified by fn, passing args as arguments.
-     *
-     * @param <T> The return type
-     * @param fn The Clojure function to call.
-     * @param args The arguments to pass.
-     * @return the value the Clojure function returned.
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClojure#invoke(java.lang.Object, java.lang.Object[])
      */
     @SuppressWarnings("unchecked")
-    public static <T> T invoke(final IFn fn, final Object...args) {
+    public <T> T invoke(final Object fnObject, final Object...args) {
+        final IFn fn = (IFn) fnObject;
         return toJava(safeCall(new Callable<T>() {
             public T call() throws Exception {
                 return (T) invokeInternal(fn, args);
@@ -283,7 +271,11 @@ public class ClJ {
         return (T) result;
     }
 
-    private static Object invokeInternal(IFn fn, Object...args) {
+    private Object invokeInternal(Object fnObj, Object...args) {
+        if (!(fnObj instanceof IFn)) {
+            return fnObj;
+        }
+        IFn fn = (IFn) fnObj;
         if (args == null) {
             return fn.invoke();
         }
@@ -346,8 +338,11 @@ public class ClJ {
     }
 
 
+    /* (non-Javadoc)
+     * @see com.bradsdeals.clj.IClojure#computeNsAliases(java.lang.String[])
+     */
     @SuppressWarnings("unchecked")
-    private static Map<String, String> computeNsAliases(String[] aliases) {
+    public Map<String, String> computeNsAliases(String[] aliases) {
         Map<String,String> result = hashMap();
         for (String alias : aliases) {
             String[] parts = alias.split(" :as ");
@@ -359,173 +354,19 @@ public class ClJ {
         return result;
     }
 
-    /*
-     * Implementation detail for the dynamic Clojure DSL
-     */
-
-    public static abstract class ClojureFn {
-        abstract <T> T invoke(Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars);
-
-        protected Object resolve(String name, String separatorChar, Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars) {
-            Object fn = null;
-
-            fn = findVar(name, vars);
-            if (fn != null) {
-                return fn;
-            }
-
-            if (name.contains(separatorChar)) {
-                String[] parts = name.split(separatorChar);
-                fn = Clojure.var(nsAliases.get(parts[0]), parts[1]);
-            } else {
-                fn = Clojure.var(name);
-            }
-
-            return fn;
-        }
-
-        protected Object findVar(String name, LinkedList<HashMap<String, Object>> vars) {
-            for (Map<String, Object> varMap : vars) {
-                if (varMap.containsKey(name)) {
-                    return varMap.get(name);
-                }
-            }
-            return null;
-        }
-    }
-
-    private static class ClojureVar {
-        public final String name;
-        public final Object value;
-
-        public ClojureVar(String name, Object value) {
-            this.name = name;
-            this.value = value;
-        }
-    }
-
-    public static class ClojureLet extends ClojureFn {
-        private final ClojureVar[] newVars;
-        private final ClojureFn[] block;
-
-        public ClojureLet(ClojureVar[] vars, ClojureFn...block) {
-            this.newVars = vars;
-            this.block = block;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        <T> T invoke(Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars) {
-            Object result = null;
-            try {
-                HashMap<String,Object> resolvedVars = resolveVars(nsAliases, vars, newVars);
-                vars.addFirst(resolvedVars);
-                for (ClojureFn fn : block) {
-                    result = fn.invoke(nsAliases, vars);
-                }
-            } finally {
-                vars.removeFirst();
-            }
-            return (T) result;
-        }
-
-        protected HashMap<String,Object> resolveVars(Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars, ClojureVar[] newVars) {
-            HashMap<String,Object> result = new HashMap<String,Object>();
-            for (ClojureVar clojureVar : newVars) {
-                if (result.containsKey(clojureVar.name)) {
-                    throw new IllegalStateException("Cannot modify an existing var: " + clojureVar.name);
-                }
-                Object invocationResult = null;
-                if (clojureVar.value instanceof ClojureFn) {
-                    invocationResult = ((ClojureFn)clojureVar.value).invoke(nsAliases, vars);
-                } else {
-                    invocationResult = clojureVar.value;
-                }
-                result.put(clojureVar.name, invocationResult);
-            }
-            return result;
-        }
-    }
-
-    /**
-     * Internal API.  Not for use by clients.
-     */
-    public static class ClojureFnLiteral extends ClojureFn {
-        protected String name;
-        protected Object fn;
-
-        public ClojureFnLiteral(String name) {
-            this.name = name;
-        }
-
-        @SuppressWarnings("unchecked")
-        public <T> T invoke(Map<String, String> nsAliases, LinkedList<HashMap<String, Object>> vars) {
-            if (fn != null) {
-                return (T) fn;
-            }
-            fn = resolve(name, "/", nsAliases, vars);
-            if (fn == null) {
-                throw new IllegalArgumentException("Could not find function: " + name);
-            }
-            if (! (fn instanceof IFn)) {
-                throw new IllegalStateException("Expected Clojure function but found: " + fn.getClass().getName() + " : " + fn.toString());
-            }
-            return (T)fn;
-        }
-    }
-
-    /**
-     * Internal implementation detail only.  Use the #_ factory function to create
-     * a function invocation and #doAll to run them.
-     */
-    public static class ClojureFnInvocation extends ClojureFnLiteral {
-        private Object[] args;
-
-        public ClojureFnInvocation(String name, Object... args) {
-            super(name);
-            this.args = args;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <T> T invoke(Map<String,String> nsAliases, LinkedList<HashMap<String, Object>> vars) {
-            Object[] resolvedArgs = new Object[args.length];
-            for (int i = 0; i < args.length; i++) {
-                Object arg = args[i];
-                if (arg instanceof ClojureFn) {
-                    resolvedArgs[i] = ((ClojureFn)arg).invoke(nsAliases, vars);
-                } else if (arg instanceof String) {
-                    resolvedArgs[i] = findVar((String) arg, vars);
-                    if (resolvedArgs[i] == null) {
-                        resolvedArgs[i] = arg;
-                    }
-                } else {
-                    resolvedArgs[i] = arg;
-                }
-            }
-
-            Object fn = resolve(name, "/", nsAliases, vars);
-            if (fn == null) {
-                throw new IllegalArgumentException("Could not find function: " + name);
-            }
-            if (fn instanceof IFn) {
-                return (T) ClJ.invoke((IFn)fn, resolvedArgs);
-            } else {
-                return (T)fn;
-            }
-        }
-    }
 
     /**
      * Private implementation detail for the Clojure / Java Interface bridge.  Not for use by clients.
      */
     public static class ClojureModule implements InvocationHandler {
+        private IClojure clj;
         private Map<String, String> nsAliases;
         @SuppressWarnings("unchecked")
         private Map<String,IFn> fnCache = hashMap();
 
-        protected ClojureModule(String[] loadPackages, String... nsAliases) {
-            this.nsAliases = computeNsAliases(nsAliases);
+        protected ClojureModule(IClojure clj, String[] loadPackages, String... nsAliases) {
+            this.clj = clj;
+            this.nsAliases = clj.computeNsAliases(nsAliases);
             for (String ns : loadPackages) {
                 loadNamespaceFromClasspath(ns);
             }
@@ -537,7 +378,7 @@ public class ClJ {
                 Ns alias = method.getAnnotation(Ns.class);
                 if (alias == null) {
                     try {
-                        fn = (IFn) ClJ.var(method.getName());
+                        fn = (IFn) clj.var(method.getName());
                     } catch (Exception e) {
                         throw new IllegalStateException("Function: " + method.getName() + "is not defined in the core namespace.", e);
                     }
@@ -547,7 +388,7 @@ public class ClJ {
                         throw new IllegalStateException(alias.value() + " is not aliased to any namespace.");
                     }
                     try {
-                        fn = (IFn) ClJ.var(namespace + "/" + method.getName());
+                        fn = (IFn) clj.var(namespace + "/" + method.getName());
                     } catch (Exception e) {
                         throw new IllegalStateException("Undefined function: " + namespace + "/" + method.getName(), e);
                     }
@@ -558,7 +399,7 @@ public class ClJ {
                 fnCache.put(method.getName(), fn);
             }
             validateArgTypes(method, args);
-            return ClJ.invoke(fn, args);
+            return clj.invoke(fn, args);
         }
 
         private void validateArgTypes(Method method, Object[] args) {
@@ -590,51 +431,23 @@ public class ClJ {
             }
             return result.toString();
         }
+
+        private IFn loadNamespace = null;
+
+        private void loadNamespaceFromClasspath(String packagePath) {
+            if (loadNamespace == null) {
+                loadNamespace = (IFn) clj.var("clojure.core/load");
+            }
+            loadNamespace.invoke(packagePath);
+        }
     }
+
 
     /*
-     * Methods to support classloader-private instances of the Clojure runtime
+     * Support classloader-private instances of the Clojure runtime
      */
 
-    @SuppressWarnings("rawtypes")
-    static void init(final ClassLoader privateClassloader) {
-        Exception ex = null;
-        try {
-            Field dvalField = Var.class.getDeclaredField("dvals");
-            dvalField.setAccessible(true);
-            final LocalThreadData threadData = new LocalThreadData(privateClassloader, (ThreadLocal)dvalField.get(null));
-            localThreadData = Possible.value(threadData);
-            safeCall(new Callable<Object>() {
-                public Object call() throws Exception {
-                    IFn require = RT.var("clojure.core", "require");
-                    IFn resolve = RT.var("clojure.core", "resolve");
-                    threadData.setResolvers(require, resolve);
-                    clojure.lang.Compiler.LOADER.bindRoot(privateClassloader);
-                    return null;
-                }
-            });
-        } catch (IllegalAccessException e) {
-            ex = e;
-        } catch (NoSuchFieldException e) {
-            ex = e;
-        }
-
-        if (ex != null) {
-            throw new RuntimeException("Failed to access Var.dvals", ex);
-        }
-    }
-
-    /**
-     * If {@link #define(Class, ClassLoader, String...)} is called with a classloader, when you
-     * want to shut down the Clojure instance, you need to call {@link #close()} to free resources
-     * held by Clojure and by this library.
-     */
-    public static void close() {
-        invoke("clojure.core/shutdown-agents");
-        localThreadData = Possible.emptyValue();
-    }
-
-    private static <T> T safeCall(Callable<T> runInClojure) {
+    private <T> T safeCall(Callable<T> runInClojure) {
         if (localThreadData.hasValue()) {
             ClassLoader origloader = localThreadData.get().preInvoke();
             try {
@@ -653,7 +466,7 @@ public class ClJ {
         }
     }
 
-    private static class LocalThreadData {
+    private class LocalThreadData {
         public ClassLoader classloader;
         @SuppressWarnings("rawtypes")
         public ThreadLocal dvals;
@@ -683,14 +496,14 @@ public class ClJ {
             this.resolve = resolve;
         }
 
-        public ClassLoader preInvoke() {
+        private ClassLoader preInvoke() {
             final ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(localThreadData.get().classloader);
             callDepth.get().getAndIncrement();
             return originalClassloader;
         }
 
-        public void postInvoke(ClassLoader loader) {
+        private void postInvoke(ClassLoader loader) {
             if (callDepth.get().decrementAndGet() == 0) {
                 dvals.remove();    // Fixed according to http://dev.clojure.org/jira/browse/CLJ-1125???
                 callDepth.remove();
@@ -708,16 +521,8 @@ public class ClJ {
             }
             return var;
         }
+
     }
 
-    private static IFn loadNamespace = null;
-
-    private static void loadNamespaceFromClasspath(String packagePath) {
-        if (loadNamespace == null) {
-            loadNamespace = (IFn) var("clojure.core/load");
-        }
-        loadNamespace.invoke(packagePath);
-    }
-
-    private static Possible<LocalThreadData> localThreadData = Possible.emptyValue();
+    private Possible<LocalThreadData> localThreadData = Possible.emptyValue();
 }

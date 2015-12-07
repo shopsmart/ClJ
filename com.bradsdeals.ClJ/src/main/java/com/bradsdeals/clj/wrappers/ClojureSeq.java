@@ -2,7 +2,7 @@ package com.bradsdeals.clj.wrappers;
 
 import java.util.Iterator;
 
-import com.bradsdeals.clj.ClJ;
+import com.bradsdeals.clj.ClJSupport;
 import com.coconut_palm_software.possible.Nulls;
 import com.coconut_palm_software.possible.Possible;
 
@@ -40,7 +40,7 @@ public class ClojureSeq implements IClojureIterable<Object> {
             public Object next() {
                 Object result = current.get().first();
                 current = Nulls.possible(current.get().next());
-                return ClJ.toJava(result);
+                return ClJSupport.toJava(result);
             }};
     }
 
