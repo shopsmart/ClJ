@@ -55,7 +55,7 @@
     <dependency>
       <groupId>com.bradsdeals</groupId>
       <artifactId>com.bradsdeals.ClJ.api</artifactId>
-      <version>0.6.1</version>
+      <version>0.6.2</version>
     </dependency>
 
     <dependency>
