@@ -1,6 +1,6 @@
 package com.bradsdeals.clj;
 
-import static com.bradsdeals.clj.ClJ.*;
+import static com.bradsdeals.clj.ClJDSL.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +19,8 @@ import junit.framework.TestCase;
 
 public class ClJTest extends TestCase {
 
+    IClJ c = new ClJ();
+
     @Require({ "clojure.string :as str", "clojure.java.io :as io" })
     interface ClojureCalls {
         @Ns("str")
@@ -29,7 +31,8 @@ public class ClJTest extends TestCase {
         void copy(@Pt({ InputStream.class, Reader.class, File.class, byte[].class, String.class }) Object input,
                 @Pt({ OutputStream.class, Writer.class, File.class }) Object output) throws IOException;
     }
-    private ClojureCalls clojure = ClJ.define(ClojureCalls.class);
+
+    private ClojureCalls clojure = c.define(ClojureCalls.class);
 
     private static final String INPUT = "I see because I C";
 
@@ -54,8 +57,11 @@ public class ClJTest extends TestCase {
         }
     }
 
+    // DSL test --------------------------------------------------------------------------------------------------
+
+
     public void testDoReplace() throws Exception {
-        String result = doAll(require("clojure.string :as str"), $("str/replace", INPUT, Pattern.compile("C"), "see"));
+        String result = doAll(c, require("clojure.string :as str"), $("str/replace", INPUT, Pattern.compile("C"), "see"));
         assertEquals("I see because I see", result);
     }
 
@@ -63,7 +69,7 @@ public class ClJTest extends TestCase {
         byte[] input = INPUT.getBytes();
         final StringBufferOutputStream output = new StringBufferOutputStream();
 
-        String result = doAll(require("clojure.string :as str", "clojure.java.io :as io"), $("io/copy", input, output),
+        String result = doAll(c, require("clojure.string :as str", "clojure.java.io :as io"), $("io/copy", input, output),
                 $("str/replace", INPUT, Pattern.compile("C"), "see"));
 
         assertEquals(INPUT, output.toString());
@@ -74,7 +80,7 @@ public class ClJTest extends TestCase {
         byte[] input = INPUT.getBytes();
         final StringBufferOutputStream output = new StringBufferOutputStream();
 
-        String result = doAll(require("clojure.string :as str", "clojure.java.io :as io", "clojure.core :as core"),
+        String result = doAll(c, require("clojure.string :as str", "clojure.java.io :as io", "clojure.core :as core"),
                 let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")),
                         $("io/copy", input, output),
                         $("core/str", "see", " because ", "see")));
@@ -88,9 +94,9 @@ public class ClJTest extends TestCase {
         final StringBufferOutputStream output = new StringBufferOutputStream();
 
         String result =
-                doAll(require("clojure.string :as str",
-                        "clojure.java.io :as io",
-                        "clojure.core :as core"),
+                doAll(c, require("clojure.string :as str",
+                                 "clojure.java.io :as io",
+                                 "clojure.core :as core"),
                     let(vars("see", $("str/replace", INPUT, Pattern.compile("C"), "see")),
                             $("io/copy", input, output),
                             $("core/str", "see", " because ", "see"),
@@ -100,4 +106,7 @@ public class ClJTest extends TestCase {
         assertEquals(INPUT, output.toString());
         assertEquals("I C because I C", result);
     }
+
+
+
 }

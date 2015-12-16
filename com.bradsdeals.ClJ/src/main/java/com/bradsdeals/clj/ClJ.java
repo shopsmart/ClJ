@@ -39,16 +39,17 @@ import clojure.lang.Symbol;
 import clojure.lang.Var;
 
 /**
- * Java helpers for calling Clojure code from Java. This class implements both
- * dynamic and type-safe methods for calling Clojure.<p>
+ * Java helpers for calling Clojure code from Java.<p>
  *
- * It is also separated into API and implementation packages, where only the
+ * ClJ is separated into API and implementation packages, where only the
  * implementation package has a direct Clojure dependency.  This is to enable
  * ClJ to optionally be used in environments like OSGi where each instance of
  * Clojure must be isolated inside its own classloader. (Thanks to ShimDandy
  * for the techniques required to do this.  See: https://github.com/projectodd/shimdandy)<p>
  *
- * The following describes the two APIs:<p>
+ * ClJ overall implements two APIs, a type-safe one and a dynamic one.  This
+ * class implements the type-safe API.  See ClJDSL in ClJ.api for the
+ * dynamic API and its implementation.<p>
  *
  * The type-safe method involves creating a Java interface whose types match the
  * types of the Clojure function being called. Annotations on the Java interface
@@ -58,19 +59,29 @@ import clojure.lang.Var;
  * create an instance of the interface referencing the corresponding Clojure
  * functions.<p>
  *
- * The dynamic method mimics Clojure's "do" form, but allows specifying require
- * clauses with aliases at the beginning.  See {@link #doAll(String[], ClojureFn...)}
- * for details.
- *
  * @author dorme
  */
-public class ClJSupport implements IClJ {
+public class ClJ implements IClJ {
 
-    /* (non-Javadoc)
-     * @see com.bradsdeals.clj.IClojure#init(java.lang.ClassLoader)
+    /**
+     * Initialize a ClJ instance.
+     */
+    public ClJ() {
+        //noop if using a public Clojure instance.
+    }
+
+    /**
+     * Initialize a private Clojure instance using the specified ClassLoader.  The ClassLoader must have
+     * clojure.jar and the ClJ runtime on its classpath and no other current ClassLoader should be able to
+     * see Clojure or the ClJ runtime.  This method is intended for use in container applications (e.g.:
+     * web containers, OSGi) where Clojure's runtime needs to be private to a specific dynamically-loadable
+     * module.  If you are using Clojure/ClJ in a normal standalone Java application, you can ignore this
+     * method.
+     *
+     * @param privateClassloader The {@link ClassLoader} referencing clojure.jar
      */
     @SuppressWarnings("rawtypes")
-    public void init(final ClassLoader privateClassloader) {
+    public ClJ(final ClassLoader privateClassloader) {
         Exception ex = null;
         try {
             Field dvalField = Var.class.getDeclaredField("dvals");
@@ -130,69 +141,6 @@ public class ClJSupport implements IClJ {
         String[] requirements = requires != null ? requires.value() : new String[] {};
         return (T) Proxy.newProxyInstance(classloader,
                 new Class[] {clojureInterface}, new ClojureModule(this, loadPackages, requirements));
-    }
-
-
-    /*
-     * The dynamic Clojure DSL is implemented here
-     */
-
-    /* (non-Javadoc)
-     * @see com.bradsdeals.clj.IClJ#doAll(java.lang.String[], com.bradsdeals.clj.internal.dsl.ClojureFn[])
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T doAll(String[] aliases, ClojureFn...block) {
-        Map<String, String> nsAliases = computeNsAliases(aliases);
-        Object result = null;
-        for (ClojureFn fn : block) {
-            if (fn instanceof IClojureCaller) {
-                ((IClojureCaller)fn).setClojure(this);
-            }
-            result = fn.invoke(nsAliases, new LinkedList<HashMap<String,Object>>());
-        }
-        return (T)result;
-    }
-
-    /* (non-Javadoc)
-     * @see com.bradsdeals.clj.IClJ#let(com.bradsdeals.clj.internal.dsl.ClojureVar[], com.bradsdeals.clj.internal.dsl.ClojureFn[])
-     */
-    public ClojureLet let(ClojureVar[] vars, ClojureFn...block) {
-        return new ClojureLet(vars, block);
-    }
-
-    /* (non-Javadoc)
-     * @see com.bradsdeals.clj.IClJ#vars(java.lang.Object[])
-     */
-    public ClojureVar[] vars(Object...nvPairs) {
-        if (nvPairs.length % 2 != 0) {
-            throw new IllegalArgumentException("There must be an even number of values in a let binding");
-        }
-        ArrayList<ClojureVar> result = new ArrayList<ClojureVar>(nvPairs.length/2);
-        for (int i=0; i <= nvPairs.length-2; i += 2) {
-            result.add(new ClojureVar((String)nvPairs[i], nvPairs[i+1]));
-        }
-        return result.toArray(new ClojureVar[nvPairs.length/2]);
-    }
-
-    /* (non-Javadoc)
-     * @see com.bradsdeals.clj.IClJ#require(java.lang.String[])
-     */
-    public String[] require(String...aliases) {
-        return aliases;
-    }
-
-    /* (non-Javadoc)
-     * @see com.bradsdeals.clj.IClJ#fn(java.lang.String)
-     */
-    public ClojureFnLiteral fn(String name) {
-        return new ClojureFnLiteral(name);
-    }
-
-    /* (non-Javadoc)
-     * @see com.bradsdeals.clj.IClJ#$(java.lang.String, java.lang.Object[])
-     */
-    public ClojureFnInvocation $(String name, Object...args) {
-        return new ClojureFnInvocation(name,args);
     }
 
 
@@ -338,23 +286,6 @@ public class ClJSupport implements IClJ {
     }
 
 
-    /* (non-Javadoc)
-     * @see com.bradsdeals.clj.IClojure#computeNsAliases(java.lang.String[])
-     */
-    @SuppressWarnings("unchecked")
-    public Map<String, String> computeNsAliases(String[] aliases) {
-        Map<String,String> result = hashMap();
-        for (String alias : aliases) {
-            String[] parts = alias.split(" :as ");
-            if (parts.length != 2) {
-                throw new IllegalArgumentException("Expecting 'namespace :as alias' but found: " + alias);
-            }
-            result.put(parts[1], parts[0]);
-        }
-        return result;
-    }
-
-
     /**
      * Private implementation detail for the Clojure / Java Interface bridge.  Not for use by clients.
      */
@@ -366,7 +297,7 @@ public class ClJSupport implements IClJ {
 
         protected ClojureModule(IClojure clj, String[] loadPackages, String... nsAliases) {
             this.clj = clj;
-            this.nsAliases = clj.computeNsAliases(nsAliases);
+            this.nsAliases = ClJDSL.computeNsAliases(nsAliases);
             for (String ns : loadPackages) {
                 loadNamespaceFromClasspath(ns);
             }

@@ -2,7 +2,7 @@ package com.bradsdeals.clj.wrappers;
 
 import java.util.Iterator;
 
-import com.bradsdeals.clj.ClJSupport;
+import com.bradsdeals.clj.ClJ;
 
 import clojure.lang.IPersistentMap;
 
@@ -48,7 +48,7 @@ public class ClojureMap implements IClojureIterable<Object> {
             }
 
             public Object next() {
-                return ClJSupport.toJava(delegateIterator.next());
+                return ClJ.toJava(delegateIterator.next());
             }
         };
     }
@@ -57,7 +57,7 @@ public class ClojureMap implements IClojureIterable<Object> {
      * @see com.bradsdeals.clj.wrappers.IClojureIterable#get(java.lang.Object)
      */
     public Object get(Object keyOrIndex) {
-        return ClJSupport.toJava(delegate.valAt(keyOrIndex));
+        return ClJ.toJava(delegate.valAt(keyOrIndex));
     }
 
     /* (non-Javadoc)
