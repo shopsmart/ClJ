@@ -11,7 +11,7 @@ import java.net.URLClassLoader;
  */
 public class ClJLoader {
 
-    private static final String CLJ_SUPPORT_CLASS = "com.bradsdeals.clj.ClJSupport";
+    private static final String CLJ_SUPPORT_CLASS = "com.bradsdeals.clj.ClJ";
 
     /**
      * Create a classloader-private instance of the ClJ Clojure-Java bridge.  To use this class,
