@@ -289,6 +289,20 @@ public class ClJ implements IClJ {
     /**
      * Private implementation detail for the Clojure / Java Interface bridge.  Not for use by clients.
      */
+
+    private static Map<String, String> computeNsAliases(String[] aliases) {
+        Map<String,String> result = new HashMap<String, String>();
+        for (String alias : aliases) {
+            String[] parts = alias.split(" :as ");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Expecting 'namespace :as alias' but found: " + alias);
+            }
+            result.put(parts[1], parts[0]);
+        }
+        return result;
+    }
+
+
     public static class ClojureModule implements InvocationHandler {
         private IClojure clj;
         private Map<String, String> nsAliases;
@@ -297,7 +311,7 @@ public class ClJ implements IClJ {
 
         protected ClojureModule(IClojure clj, String[] loadPackages, String... nsAliases) {
             this.clj = clj;
-            this.nsAliases = ClJDSL.computeNsAliases(nsAliases);
+            this.nsAliases = computeNsAliases(nsAliases);
             for (String ns : loadPackages) {
                 loadNamespaceFromClasspath(ns);
             }

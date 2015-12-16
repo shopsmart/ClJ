@@ -20,19 +20,6 @@ import com.bradsdeals.clj.internal.dsl.ClojureVar;
  */
 public class ClJDSL {
 
-    static Map<String, String> computeNsAliases(String[] aliases) {
-        Map<String,String> result = new HashMap<String, String>();
-        for (String alias : aliases) {
-            String[] parts = alias.split(" :as ");
-            if (parts.length != 2) {
-                throw new IllegalArgumentException("Expecting 'namespace :as alias' but found: " + alias);
-            }
-            result.put(parts[1], parts[0]);
-        }
-        return result;
-    }
-
-
     /**
      * A "do" block for Java that dynamically calls Clojure code.  e.g.:
      * <code>
@@ -132,5 +119,17 @@ public class ClJDSL {
      */
     public static ClojureFnInvocation $(String name, Object...args) {
         return new ClojureFnInvocation(name,args);
+    }
+
+    private static Map<String, String> computeNsAliases(String[] aliases) {
+        Map<String,String> result = new HashMap<String, String>();
+        for (String alias : aliases) {
+            String[] parts = alias.split(" :as ");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Expecting 'namespace :as alias' but found: " + alias);
+            }
+            result.put(parts[1], parts[0]);
+        }
+        return result;
     }
 }
