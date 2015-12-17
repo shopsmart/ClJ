@@ -109,7 +109,8 @@ public class ClJTest extends TestCase {
 
     public void testDo_fncallInArgList_success() throws Exception {
         doAll(c, require("clojure.core :as c"),
-                $("c/println", $("c/str", "Hello", " world")));
+                $("c/println",
+                        $("c/str", "Hello", " world")));
     }
 
 
