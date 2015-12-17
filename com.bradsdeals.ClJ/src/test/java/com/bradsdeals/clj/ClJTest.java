@@ -107,6 +107,10 @@ public class ClJTest extends TestCase {
         assertEquals("I C because I C", result);
     }
 
+    public void testDo_fncallInArgList_success() throws Exception {
+        doAll(c, require("clojure.core :as c"),
+                $("c/println", $("c/str", "Hello", " world")));
+    }
 
 
 }

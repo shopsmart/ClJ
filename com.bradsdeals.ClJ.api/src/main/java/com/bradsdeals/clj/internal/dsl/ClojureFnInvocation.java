@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import com.bradsdeals.clj.IClojureCaller;
+
 public class ClojureFnInvocation extends ClojureFnLiteral {
     private Object[] args;
 
@@ -17,6 +19,9 @@ public class ClojureFnInvocation extends ClojureFnLiteral {
         Object[] resolvedArgs = new Object[args.length];
         for (int i = 0; i < args.length; i++) {
             Object arg = args[i];
+            if (arg instanceof IClojureCaller) {
+                ((IClojureCaller)arg).setClojure(clojure);
+            }
             if (arg instanceof ClojureFn) {
                 resolvedArgs[i] = ((ClojureFn)arg).invoke(nsAliases, vars);
             } else if (arg instanceof String) {

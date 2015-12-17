@@ -27,7 +27,7 @@ public abstract class ClojureFn implements IClojureCaller {
 
         if (name.contains(separatorChar)) {
             String[] parts = name.split(separatorChar);
-            fn = clojure.var(nsAliases.get(parts[0]), parts[1]);
+            fn = clojure.var(nsAliases.get(parts[0]), parts[1]); // FIXME: NPE here if name isn't found
         } else {
             fn = clojure.var(name);
         }
