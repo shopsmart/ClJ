@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Loader
+Bundle-SymbolicName: com.bradsdeals.clojuresupport.loader
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: BRADSDEALS
+ExtensionBundle-Activator: com.bradsdeals.clojuresupport.loader.Activator
+Fragment-Host: org.eclipse.osgi;bundle-version="3.10.101"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

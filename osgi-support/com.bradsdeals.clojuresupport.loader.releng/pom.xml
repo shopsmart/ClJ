@@ -1,0 +1,104 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.coconut_palm_software</groupId>
+    <artifactId>uber-parent-pom</artifactId>
+    <version>1.0.0-snapshot</version>
+  </parent>
+
+  <groupId>com.bradsdeals</groupId>
+  <artifactId>clojuresupport_releng</artifactId>
+  <version>0.5.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>Clojure Support Release Engineering</name>
+  <description>Release engineering</description>
+  <url>https://github.com/shopsmart/ClJ</url>
+
+  <licenses>
+    <license>
+      <name>The Eclipse Public License, Version 1.0</name>
+      <url>https://www.eclipse.org/legal/epl-v10.html</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>David Orme</name>
+      <email>djo@coconut-palm-software.com</email>
+      <organization>Coconut Palm Software</organization>
+      <organizationUrl>http://www.coconut-palm-software.com</organizationUrl>
+    </developer>
+    <developer>
+      <name>David Orme</name>
+      <email>dorme@bradsdeals.com</email>
+      <organization>Brad's Deals</organization>
+      <organizationUrl>http://www.bradsdeals.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <!-- Build with mvn p2:site -->
+  <!-- Serve with mvn jetty:run -->
+
+  <!-- <scm> <connection>scm:git:git@github.com:coconutpalm/possible-monad.git</connection>
+    <developerConnection>scm:git:git@github.com:coconutpalm/possible-monad.git</developerConnection>
+    <url>git@github.com:coconutpalm/possible-monad.git</url> </scm> -->
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.reficio</groupId>
+        <artifactId>p2-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-cli</id>
+
+            <configuration>
+              <artifacts>
+
+                <artifact>
+                  <id>com.coconut_palm_software:com.coconut_palm_software.possible:1.0.3</id>
+                  <source>true</source>
+                </artifact>
+
+                <artifact>
+                  <id>com.bradsdeals:com.bradsdeals.ClJ:0.6.4</id>
+                  <source>true</source>
+                  <transitive>true</transitive>
+                  <excludes>
+                    <exclude>org.clojure:org.clojure:jar:1.7.0</exclude>
+                  </excludes>
+                </artifact>
+
+                <artifact>
+                  <id>com.bradsdeals:com.bradsdeals.ClJ.api:0.6.4</id>
+                  <source>true</source>
+                </artifact>
+
+              </artifacts>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <repositories>
+    <repository>
+      <id>mars</id>
+      <url>http://download.eclipse.org/releases/mars</url>
+      <layout>p2</layout>
+    </repository>
+
+    <!--
+    <repository>
+      <id>kepler</id>
+      <url>http://download.eclipse.org/tools/orbit/downloads/drops/R20130517111416/repository/</url>
+      <layout>p2</layout>
+    </repository>
+     -->
+  </repositories>
+
+</project>

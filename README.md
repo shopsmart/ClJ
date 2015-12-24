@@ -4,13 +4,14 @@ Java to Clojre interop DSL and utilities
 
 ## Usage
 
-* Download and compile using
+Currently the project is in an alpha state and requires each person to perform their own
+build.  Once this is done, you can access the jars from your local Maven repository.
 
-```
-    mvn clean install
-```
+* Clone the repo and build using build.sh
 
-* Depend on in your Maven projects using:
+## If using in a standalone Java application
+
+* Depend on ClJ in your Maven projects using:
 
 ```xml
     <dependency>
@@ -20,7 +21,7 @@ Java to Clojre interop DSL and utilities
     </dependency>
     <dependency>
       <groupId>com.bradsdeals</groupId>
-      <artifactId>ClJ</artifactId>
+      <artifactId>ClJ.api</artifactId>
       <version>${ClJ.version}</version>
     </dependency>
 ```
