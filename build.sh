@@ -12,11 +12,9 @@ cd ../../..
 
 # Build ClJ
 
-cd clojure-java/com.bradsdeals.ClJ.api
-mvn clean install
-cd ../com.bradsdeals.ClJ
-mvn clean install
-cd ../..
+cd clojure-java
+mvn install
+cd ..
 
 # Build Eclipse plugin
 cd osgi-support/com.bradsdeals.clojuresupport.loader/lib
