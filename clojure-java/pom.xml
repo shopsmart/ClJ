@@ -1,0 +1,57 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.coconut_palm_software</groupId>
+    <artifactId>uber-parent-pom</artifactId>
+    <version>1.1.1-SNAPSHOT</version>
+  </parent>
+
+  <properties>
+	  <clj.version>0.6.4</clj.version>
+  </properties>
+  
+  <groupId>com.bradsdeals</groupId>
+  <artifactId>com.bradsdeals.ClJ.releng</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+
+  <name>ClJ API releng</name>
+  <description>Clojure-Java bridge API release engineering</description>
+
+  <url>https://github.com/shopsmart/ClJ</url>
+
+  <licenses>
+	  <license>
+		  <name>The Eclipse Public License, Version 1.0</name>
+		  <url>https://www.eclipse.org/legal/epl-v10.html</url>
+	  </license>
+  </licenses>
+
+  <developers>
+	  <developer>
+		  <name>David Orme</name>
+		  <email>djo@coconut-palm-software.com</email>
+		  <organization>Coconut Palm Software</organization>
+		  <organizationUrl>http://www.coconut-palm-software.com</organizationUrl>
+	  </developer>
+	  <developer>
+		  <name>David Orme</name>
+		  <email>dorme@bradsdeals.com</email>
+		  <organization>Brad's Deals</organization>
+		  <organizationUrl>http://www.bradsdeals.com</organizationUrl>
+	  </developer>
+  </developers>
+
+  <scm>
+	  <connection>scm:git:git@github.com:coconutpalm/possible-monad.git</connection>
+	  <developerConnection>scm:git:git@github.com:coconutpalm/possible-monad.git</developerConnection>
+	  <url>git@github.com:coconutpalm/possible-monad.git</url>
+  </scm>
+
+
+  <modules>
+	  <module>com.bradsdeals.ClJ</module>
+	  <module>com.bradsdeals.ClJ.api</module>
+  </modules>
+
+</project>
