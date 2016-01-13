@@ -8,11 +8,10 @@
 	  <version>1.0.0</version>
   </parent>
 
-  <groupId>com.bradsdeals</groupId>
   <artifactId>com.bradsdeals.ClJ</artifactId>
   <version>${clj.version}</version>
   <packaging>takari-jar</packaging>
-  
+
   <name>ClJ</name>
   <description>Java to Clojre interop DSL and utilities</description>
 
