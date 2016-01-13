@@ -6,11 +6,10 @@
 	  <version>1.0.0</version>
   </parent>
 
-  <groupId>com.bradsdeals</groupId>
   <artifactId>com.bradsdeals.ClJ.api</artifactId>
   <version>${clj.version}</version>
   <packaging>takari-jar</packaging>
-  
+
   <name>ClJ API</name>
   <description>Clojure-Java bridge API</description>
 
