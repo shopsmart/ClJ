@@ -9,7 +9,7 @@
   <properties>
 	  <clj.version>0.6.4</clj.version>
   </properties>
-  
+
   <groupId>com.bradsdeals</groupId>
   <artifactId>com.bradsdeals.ClJ.releng</artifactId>
   <version>1.0.0</version>
