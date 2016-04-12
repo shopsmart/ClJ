@@ -2,14 +2,6 @@
 
 git submodule update --init --recursive
 
-# Build and install dependencies to the local Maven repository
-
-cd externals/possible-monad/uber-parent-pom
-mvn install
-cd ../com.coconut_palm_software.possible
-mvn clean install
-cd ../../..
-
 # Build ClJ
 
 cd clojure-java
