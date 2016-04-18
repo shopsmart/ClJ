@@ -8,7 +8,8 @@
 	  <version>0.6.7</version>
   </parent>
 
-  <artifactId>com.bradsdeals.ClJ</artifactId>
+  <groupId>com.github.shopsmart.ClJ</groupId>
+  <artifactId>ClJ</artifactId>
   <version>${project.parent.version}</version>
   <packaging>takari-jar</packaging>
 

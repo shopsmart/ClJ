@@ -13,12 +13,14 @@
 	  <version>0.6.7</version>
   </parent>
 
-  <artifactId>com.bradsdeals.clojuresupport.loader.m2-p2</artifactId>
+  <groupId>com.github.shopsmart.ClJ</groupId>
+  <artifactId>m2-p2.repo</artifactId>
   <version>${project.parent.version}</version>
   <packaging>pom</packaging>
 
-  <name>Clojure Support Release Engineering</name>
-  <description>Release engineering</description>
+  <name>Maven->P2 Repo</name>
+  <description>A P2 repository built from Maven artifacts</description>
+
   <url>https://github.com/shopsmart/ClJ</url>
 
   <licenses>

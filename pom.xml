@@ -11,8 +11,8 @@
   <version>0.6.7</version>
   <packaging>pom</packaging>
 
-  <name>ClJ API releng</name>
-  <description>Clojure-Java bridge API release engineering</description>
+  <name>ClJ Main Build</name>
+  <description>Clojure-Java bridge API with OSGi support</description>
 
   <url>https://github.com/shopsmart/ClJ</url>
 
@@ -47,8 +47,9 @@
   </developers>
 
   <modules>
-	  <module>com.bradsdeals.ClJ.api</module>
-	  <module>com.bradsdeals.ClJ</module>
+	  <module>ClJ.api</module>
+	  <module>ClJ</module>
+	  <module>ClJ.osgi</module>
   </modules>
 
 </project>

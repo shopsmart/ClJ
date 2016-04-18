@@ -2,10 +2,19 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.github.shopsmart</groupId>
-	<artifactId>com.bradsdeals.clojuresupport.loader</artifactId>
-	<version>0.6.7</version>
+	<parent>
+		<groupId>com.github.shopsmart</groupId>
+		<artifactId>ClJ</artifactId>
+		<version>0.6.7</version>
+	</parent>
+
+	<groupId>com.github.shopsmart.ClJ</groupId>
+	<artifactId>ClJ.osgi</artifactId>
+	<version>${project.parent.version}</version>
 	<packaging>eclipse-plugin</packaging>
+
+	<name>ClJ OSGi Library</name>
+	<description>Support for Clojure in OSGi containers</description>
 
 	<properties>
 		<tycho-version>0.25.0</tycho-version>
@@ -55,6 +64,33 @@
 						<goals>
 							<goal>plugin-source</goal>
 						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>exec-maven-plugin</artifactId>
+				<groupId>org.codehaus.mojo</groupId>
+				<executions>
+					<execution>
+						<id>Generate libraries</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>${basedir}/get-embedded-libs.sh</executable>
+						</configuration>
+					</execution>
+					<execution>
+						<id>Generate p2 site</id>
+						<phase>install</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>${basedir}/make-p2-site.sh</executable>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
