@@ -3,13 +3,13 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-	  <groupId>com.bradsdeals</groupId>
-	  <artifactId>com.bradsdeals.ClJ.releng</artifactId>
-	  <version>1.0.0</version>
+	  <groupId>com.github.shopsmart</groupId>
+	  <artifactId>ClJ</artifactId>
+	  <version>0.6.7</version>
   </parent>
 
   <artifactId>com.bradsdeals.ClJ</artifactId>
-  <version>${clj.version}</version>
+  <version>${project.parent.version}</version>
   <packaging>takari-jar</packaging>
 
   <name>ClJ</name>
@@ -17,21 +17,21 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.coconut_palm_software</groupId>
-      <artifactId>com.coconut_palm_software.possible</artifactId>
-      <version>1.0.4</version>
+      <groupId>com.github.coconutpalm</groupId>
+      <artifactId>possible-monad</artifactId>
+      <version>1.0.6</version>
     </dependency>
 
     <dependency>
-      <groupId>com.bradsdeals</groupId>
+      <groupId>com.github.shopsmart</groupId>
       <artifactId>com.bradsdeals.ClJ.api</artifactId>
-      <version>${clj.version}</version>
+      <version>${parent.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.7.0</version>
+      <version>1.8.0</version>
     </dependency>
 
     <!-- Test dependencies -->
