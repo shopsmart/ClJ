@@ -26,7 +26,6 @@ public class DynamicClojure {
      *  It may eventually provide UI for showing workspace Clojure
      *  plugins, their status, and UI for starting/stopping/reloading.
      *
-     *  - Make this a M2 project with "referenced libraries" as dependencies and a shaded JAR.
      *  - REPL library: Use Cider
      *  - Refactor noted parts in #initLein below as described
      */
