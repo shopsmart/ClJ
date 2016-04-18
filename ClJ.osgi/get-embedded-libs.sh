@@ -21,5 +21,5 @@ rm -f *javadoc.jar
 rm -f *tests.jar
 
 mv ClJ.api*.jar ClJ.api.jar
-mv ClJ*.jar ClJ.jar
+mv ClJ-*.jar ClJ.jar
 mv com.coconut*.jar possible.jar
