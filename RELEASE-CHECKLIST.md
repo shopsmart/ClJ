@@ -3,7 +3,7 @@
 ## Ensure dependencies are up to date
 
 * git submodule update --init --recursive ; # Then check for a new possible-monad version.
-* Double-check the that the possible-monad version is in com.bradsdeals.ClJ and m2-p2
+* Double-check the that the possible-monad version is in ClJ and ClJ.p2
 
 ## Choose new and update version number
 
