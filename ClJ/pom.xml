@@ -43,4 +43,29 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+	  <plugins>
+			<plugin>
+				<artifactId>exec-maven-plugin</artifactId>
+				<groupId>org.codehaus.mojo</groupId>
+				<executions>
+					<execution>
+						<id>ClJ.osgi</id>
+						<phase>install</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<workingDirectory>${basedir}/../ClJ.osgi</workingDirectory>
+							<executable>mvn</executable>
+							<arguments>
+								<argument>install</argument>
+                     </arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+  </build>
 </project>

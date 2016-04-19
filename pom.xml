@@ -49,7 +49,6 @@
   <modules>
 	  <module>ClJ.api</module>
 	  <module>ClJ</module>
-	  <module>ClJ.osgi</module>
   </modules>
 
 </project>

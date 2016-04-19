@@ -8,7 +8,7 @@
 ## Choose new and update version number
 
 * Update version number in parent pom.xml
-* Update version number in ClJ.osgi/META-INF/MANIFEST.MF
+* Update version number in ClJ.osgi/pom.xml and ClJ.osgi/META-INF/MANIFEST.MF
 
 ## Build/test
 

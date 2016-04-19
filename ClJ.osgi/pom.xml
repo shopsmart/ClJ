@@ -2,15 +2,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>com.github.shopsmart</groupId>
-		<artifactId>ClJ</artifactId>
-		<version>0.6.7</version>
-	</parent>
-
 	<groupId>com.github.shopsmart.ClJ</groupId>
 	<artifactId>ClJ.osgi</artifactId>
-	<version>${project.parent.version}</version>
+	<version>0.6.7</version>
+
 	<packaging>eclipse-plugin</packaging>
 
 	<name>ClJ OSGi Library</name>
