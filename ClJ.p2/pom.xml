@@ -60,7 +60,7 @@
                 </artifact>
 
                 <artifact>
-                  <id>com.github.shopsmart:com.bradsdeals.ClJ.api:${project.parent.version}</id>
+                  <id>com.github.shopsmart:ClJ.api:${project.parent.version}</id>
                   <source>true</source>
                   <!-- <transitive>true</transitive> -->
                   <!-- <excludes> -->
@@ -69,7 +69,7 @@
                 </artifact>
 
                 <artifact>
-                  <id>com.github.shopsmart:com.bradsdeals.clojuresupport.loader:${project.parent.version}</id>
+                  <id>com.github.shopsmart:ClJ.osgi:${project.parent.version}</id>
                   <source>true</source>
                 </artifact>
 
