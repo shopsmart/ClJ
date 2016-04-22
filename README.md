@@ -1,13 +1,27 @@
 # ClJ
 
-Java to Clojre interop DSL and utilities
+Clojure-Java interop utilities
 
-## Usage
+## Features
 
-Currently the project is in an alpha state and requires each person to perform their own
-build.  Once this is done, you can access the jars from your local Maven repository.
+* Java to Clojre interop DSL and utilities with experimental OSGi support.
+* Like Shimdandy, supports multiple Clojure runtimes within a single Java application.
+* Highly experimental OSGi integration with Equinox and Eclipse.
 
-* Clone the repo and build using build.sh
+
+## Maven coordinates
+
+````xml
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+	<name>Jitpack repo</name>
+	<url>https://jitpack.io</url>
+  </repository>
+</repositories>
+````
+
+
 
 ## If using in a standalone Java application
 
