@@ -5,5 +5,5 @@ Bundle-SymbolicName: ClJ.osgi
 Bundle-Version: 0.6.7
 Bundle-Vendor: BRADSDEALS
 ExtensionBundle-Activator: com.bradsdeals.clojuresupport.loader.Activator
-Fragment-Host: org.eclipse.osgi;bundle-version="3.10.101"
+Fragment-Host: org.eclipse.osgi
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
