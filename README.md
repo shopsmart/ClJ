@@ -5,50 +5,19 @@ Clojure-Java interop utilities
 ## Features
 
 * Java to Clojre interop DSL and utilities with experimental OSGi support.
+* Automatic wrapping of Clojure-returned collections to reasonable implementations of
+  Java's Iterable<T> interface.
 * Like Shimdandy, supports multiple Clojure runtimes within a single Java application.
 * Highly experimental OSGi integration with Equinox and Eclipse.
 
+## How?
 
-## Maven coordinates
+### There are two APIs:
 
-````xml
-<repositories>
-  <repository>
-    <id>jitpack.io</id>
-	<name>Jitpack repo</name>
-	<url>https://jitpack.io</url>
-  </repository>
-</repositories>
-````
-
-
-
-## If using in a standalone Java application
-
-* Depend on ClJ in your Maven projects using:
-
-```xml
-    <dependency>
-      <groupId>com.bradsdeals</groupId>
-      <artifactId>ClJ</artifactId>
-      <version>${ClJ.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.bradsdeals</groupId>
-      <artifactId>ClJ.api</artifactId>
-      <version>${ClJ.version}</version>
-    </dependency>
-```
-
-where you substitute the version of the ClJ libraries for ${ClJ.version} or define a Maven
-property named ClJ.version to the correct value.
-
-## There are two APIs:
-
-* One based on defining a Java interface to Clojure's functions
+* One based on defining a Java interface to Clojure's functions.  This provides the simplest
+and most Java-idiomatic interface to Clojure.
 
 ```java
-
     @Require({"leiningen.core.user :as u",
               "leiningen.core.project :as p",
               "leiningen.core.classpath :as cp"})
@@ -69,12 +38,16 @@ property named ClJ.version to the correct value.
     }
 ```
 
-* One for dynamically calling Clojure using a form similar to "do".  With this form, Clojure functions
+In addition to annotating methods for Clojure namespaces, individual parameters can be type-annotated,
+even in cases where Clojure allows the same function to accept, say, a Vector or a Map in the initial
+parameter.  These will be type-checked at runtime, but at least the types will be clearly specified and
+obvious in the code.
+
+* The second API allows for dynamically calling Clojure using a form similar to "do".  With this form, Clojure functions
 can be passed easily to Clojure functions.  The DSL also provides a lexically-scoped implementation
 of "let".  See the tests for documentation on what is supported.  Here is an example, from the integration tests:
 
 ```java
-
     byte[] input = "I see because I C".getBytes();
     final StringBufferOutputStream output = new StringBufferOutputStream();
 
@@ -94,10 +67,15 @@ of "let".  See the tests for documentation on what is supported.  Here is an exa
 
 ### Methods that return Clojure collections
 
-Clojure's persistent collections APIs are convenient and easy to use from Clojure, but many of the interfaces do not interoperate nicely with Java's collections API or make it easy to write idiomatic Java code that interoperates with Clojure.  When ClJ invokes a method that returns any of Clojure's core collection types, it automatically wraps that collection in an instance of *IClojureIterable*.  While these collections are still immutable, this enables use by Java's foreach construct as well as random access to the collection's elements.  As-of this writing, this is the *IClojureIterable* interface definition:
+Clojure's persistent collections APIs are convenient and easy to use from Clojure, but many of the
+interfaces do not interoperate nicely with Java's collections API or make it easy to write idiomatic
+Java code that interoperates with Clojure.  When ClJ invokes a method that returns any of Clojure's
+core collection types, it automatically wraps that collection in an instance of *IClojureIterable*.
+While these collections are still immutable, this enables use by Java's foreach construct as well as
+random access to the collection's elements.  As-of this writing, this is the *IClojureIterable*
+interface definition:
 
 ```java
-
     public interface IClojureIterable<T> extends Iterable<T> {
         /**
          * Return the underlying collection's size.
@@ -134,7 +112,6 @@ The Java interface-based API is also usable to create multiple private instances
 First, define an interface to your Clojure functions using the first (Java interfaced-based) API above.  Next, ensure that the Clojure and ClJ JARs are NOT anywhere on the classpath, but that their jars are available to the container in the file system.  Only the ClJ.api jar should be on the classpath.  Then, write code similar to the following to initialize a private Clojure instance using ClJ:
 
 ```java
-
     URL clojureJar = new File("/path/to/clojure.jar").toURI().toURL();      // Customize this for your container
     URL cljToJavaJar = new File("/path/to/ClJ-version.jar").toURI().toURL();
     ClassLoader clojureClassloader = new URLClassLoader(new URL[] {clojureJar, cljToJavaJar}, parentClassloader);
@@ -144,7 +121,6 @@ First, define an interface to your Clojure functions using the first (Java inter
 Then to use your new Clojure instance, PrivateClJ's API is the same as ClJ's API.  Define an instance of your interface using the #define method, and call methods on your object like usual.
 
 ```java
-
     lein = clJ.define(YourCljInterface.class);
     lein.someClojureMethod("foo", "bar", "baz");
 ```
@@ -154,9 +130,75 @@ Note that data passed from one Clojure instance to another within the same conta
 Lastly, since you created a private Clojure instance, if your container unloads your module, the module unloader also needs to close your Clojure instance and free all of the objects the Clojure environment allocated:
 
 ```java
-
     clJ.close()
 ```
+
+
+## Usage
+
+### With a single Clojure runtime
+
+Add both ClJ and ClJ.api to your Maven build.  Done.  See below for Maven coordinates.
+
+
+### With multiple Clojure runtimes in the same Java application
+
+* Add ClJ.api to your Maven build.
+* Create a URLClassLoader that is a child of your module's classloader.  This URLClassLoader
+  should reference both the ClJ.jar and Clojure.jar.
+* Use ClJLoader#clj(yourClassLoader) to obtain an IClJ instance to interact with the new Clojure runtime.
+* If you ever unload your module, call #close() on your Clojure instance to free its resources.
+
+See the code above for specific examples.
+
+
+### With OSGi and Eclipse (work in progress)
+
+The goal of the OSGi support is to enable:
+
+* Individual OSGi bundles or groups of bundles to share a private Clojure instance.
+* Developers to attach a Clojure REPL to any arbitrary active OSGi bundle for experimentation or debugging purposes.
+* Eclipse tool support for the above.
+
+We currently do not provide a P2 repository build out of the box.  However, it is easy to do from
+the code.
+
+After checking out the code from Github, simply type:
+
+```bash
+make
+# ...lots of stuff scrolls by
+make p2
+```
+
+At this point you will have a P2 repository server running on localhost:8080 with all the built artifacts.
+
+Install possible-monad, ClJ.api, and ClJ.osgi.
+
+
+## Maven coordinates for main ClJ library
+
+```xml
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+	<name>Jitpack repo</name>
+	<url>https://jitpack.io</url>
+  </repository>
+</repositories>
+```
+
+### ClJ.api - The API library
+
+* GroupId: com.github.shopsmart.ClJ
+* ArtifactId: ClJ.api
+* Version: [![Release](http://jitpack.io/v/com.github.coconutpalm/possible-monad.svg)](https://jitpack.io/#coconutpalm/possible-monad)
+
+### ClJ - The API implementation
+
+* GroupId: com.github.shopsmart.ClJ
+* ArtifactId: ClJ
+* Version: [![Release](http://jitpack.io/v/com.github.coconutpalm/possible-monad.svg)](https://jitpack.io/#coconutpalm/possible-monad)
 
 
 ## Documentation
