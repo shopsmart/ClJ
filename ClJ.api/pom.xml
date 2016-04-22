@@ -4,7 +4,7 @@
   <parent>
 	  <groupId>com.github.shopsmart</groupId>
 	  <artifactId>ClJ</artifactId>
-	  <version>0.6.7</version>
+	  <version>0.6.8</version>
   </parent>
 
   <groupId>com.github.shopsmart.ClJ</groupId>

@@ -4,7 +4,7 @@
 
 	<groupId>com.github.shopsmart.ClJ</groupId>
 	<artifactId>ClJ.osgi</artifactId>
-	<version>0.6.7</version>
+	<version>0.6.8</version>
 
 	<packaging>eclipse-plugin</packaging>
 
