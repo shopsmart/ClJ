@@ -50,7 +50,7 @@ public class DynamicClojure {
      */
     public static Possible<Leiningen> lein = Possible.emptyValue();
 
-    private static String PLUGIN_ID = "com.bradsdeals.clojuresupport.loader";
+    private static String PLUGIN_ID = "ClJ.osgi";
     private static String HOST_ID = "org.eclipse.osgi";
 
     private static Possible<BundleContext> parentContext = Possible.emptyValue();
