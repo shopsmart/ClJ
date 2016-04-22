@@ -1,3 +1,6 @@
 [submodule "externals/possible-monad"]
 	path = externals/possible-monad
 	url = git@github.com:coconutpalm/possible-monad.git
+[submodule "externals/no.javatime.inplace"]
+	path = externals/no.javatime.inplace
+	url = git@github.com:coconutpalm/no.javatime.inplace.git
