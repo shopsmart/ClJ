@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ClJ.osgi
+Bundle-SymbolicName: ClJ.osgi
+Bundle-Version: 0.6.8
+Bundle-Vendor: BRADSDEALS
+ExtensionBundle-Activator: com.bradsdeals.clojuresupport.loader.Activator
+Fragment-Host: org.eclipse.osgi
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
