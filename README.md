@@ -192,13 +192,13 @@ Install possible-monad, ClJ.api, and ClJ.osgi.
 
 * GroupId: com.github.shopsmart.ClJ
 * ArtifactId: ClJ.api
-* Version: [![Release](http://jitpack.io/v/com.github.coconutpalm/possible-monad.svg)](https://jitpack.io/#coconutpalm/possible-monad)
+* Version: [![Release](http://jitpack.io/v/com.github.shopsmart.ClJ/ClJ.api.svg)](https://jitpack.io/#shopsmart.ClJ/ClJ.api)
 
 ### ClJ - The API implementation
 
 * GroupId: com.github.shopsmart.ClJ
 * ArtifactId: ClJ
-* Version: [![Release](http://jitpack.io/v/com.github.coconutpalm/possible-monad.svg)](https://jitpack.io/#coconutpalm/possible-monad)
+* Version: [![Release](http://jitpack.io/v/com.github.shopsmart.ClJ/ClJ.svg)](https://jitpack.io/#shopsmart.ClJ/ClJ)
 
 
 ## Documentation
