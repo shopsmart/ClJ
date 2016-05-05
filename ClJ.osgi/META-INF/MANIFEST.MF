@@ -7,3 +7,7 @@ Bundle-Vendor: BRADSDEALS
 ExtensionBundle-Activator: com.bradsdeals.clojuresupport.loader.Activator
 Fragment-Host: org.eclipse.osgi
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ClassPath: lib/ClJ.api.jar,
+ lib/ClJ.jar,
+ lib/leiningen-2.5.2-standalone.jar,
+ lib/possible.jar
