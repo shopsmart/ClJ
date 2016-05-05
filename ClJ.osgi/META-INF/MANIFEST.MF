@@ -1,13 +1,11 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: ClJ.osgi
-Bundle-SymbolicName: ClJ.osgi
+Bundle-SymbolicName: ClJ.osgi;singleton:=true
 Bundle-Version: 0.6.8
 Bundle-Vendor: BRADSDEALS
 ExtensionBundle-Activator: com.bradsdeals.clojuresupport.loader.Activator
 Fragment-Host: org.eclipse.osgi
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Bundle-ClassPath: lib/ClJ.api.jar,
- lib/ClJ.jar,
- lib/leiningen-2.5.2-standalone.jar,
+Bundle-ClassPath: ., lib/ClJ.api.jar,
  lib/possible.jar
