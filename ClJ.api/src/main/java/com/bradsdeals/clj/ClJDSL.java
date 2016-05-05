@@ -12,7 +12,7 @@ import com.bradsdeals.clj.internal.dsl.ClojureLet;
 import com.bradsdeals.clj.internal.dsl.ClojureVar;
 
 /**
- * A dynamic Clojure DSL mimicing Clojure's "do" form, and that allows specifying require
+ * A dynamic Clojure DSL mimicking Clojure's "do" form, and that allows specifying require
  * clauses with aliases at the beginning.  See {@link #doAll(IClojure, String[], ClojureFn...)}
  * for details.
  *
