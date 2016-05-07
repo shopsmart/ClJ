@@ -24,9 +24,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.shopsmart</groupId>
-      <artifactId>com.bradsdeals.ClJ.api</artifactId>
-      <version>${project.parent.version}</version>
+	    <groupId>com.github.shopsmart.ClJ</groupId>
+	    <artifactId>ClJ.api</artifactId>
+	    <version>${project.parent.version}</version>
     </dependency>
 
     <dependency>

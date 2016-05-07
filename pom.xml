@@ -7,7 +7,7 @@
   </parent>
 
   <groupId>com.github.shopsmart</groupId>
-  <artifactId>ClJ</artifactId>
+  <artifactId>ClJ.parent</artifactId>
   <version>0.6.8</version>
   <packaging>pom</packaging>
 

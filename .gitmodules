@@ -4,3 +4,9 @@
 [submodule "externals/no.javatime.inplace"]
 	path = externals/no.javatime.inplace
 	url = git@github.com:coconutpalm/no.javatime.inplace.git
+[submodule "externals/clojure.osgi"]
+	path = externals/clojure.osgi
+	url = git@github.com:coconutpalm/clojure.osgi.git
+[submodule "externals/clojure-osgi-utils"]
+	path = externals/clojure-osgi-utils
+	url = git@github.com:coconutpalm/clojure-osgi-utils.git
