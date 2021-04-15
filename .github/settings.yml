@@ -1,8 +1,8 @@
 repository:
   name: ClJ
-  description: Java to Clojure interop DSL and utilities
+  description: "**DEPRECATED** Java to Clojure interop DSL and utilities"
   homepage: ''
-  topics: ''
+  topics: deprecated,obselete,archived
   private: false
   has_issues: true
   has_projects: true
