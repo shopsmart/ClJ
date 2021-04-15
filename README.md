@@ -1,4 +1,4 @@
-# ClJ
+# **DEPRECATED** ClJ
 
 Clojure-Java interop utilities
 

@@ -1,0 +1,6 @@
+name: ClJ
+team: data
+type: library
+tags:
+  language: java,clojure
+  dependencies: maven
